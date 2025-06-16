@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import uuid
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 
 class DataManager:

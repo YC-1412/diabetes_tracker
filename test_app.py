@@ -7,7 +7,6 @@ import os
 import sys
 import tempfile
 import shutil
-from datetime import datetime
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -128,7 +127,7 @@ def test_modules():
         # Remove test directory
         try:
             shutil.rmtree(test_dir)
-        except:
+        except Exception as e:
             pass
 
 

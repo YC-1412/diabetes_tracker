@@ -1,7 +1,5 @@
 import os
 import openai
-from typing import Optional
-import json
 
 
 class AIRecommendationEngine:
@@ -33,9 +31,9 @@ class AIRecommendationEngine:
                 messages=[
                     {
                         "role": "system",
-                        "content": """You are a helpful diabetes management assistant. 
-                        Provide personalized, friendly, and actionable advice based on the user's data. 
-                        Focus on practical suggestions for diet, exercise, and lifestyle changes. 
+                        "content": """You are a helpful diabetes management assistant.
+                        Provide personalized, friendly, and actionable advice based on the user's data.
+                        Focus on practical suggestions for diet, exercise, and lifestyle changes.
                         Keep responses conversational and encouraging, but also informative.""",
                     },
                     {"role": "user", "content": context},
@@ -60,14 +58,14 @@ class AIRecommendationEngine:
 
         context = f"""
         User: {username}
-        
+
         Today's Data:
         - Blood Sugar Level: {blood_sugar} mg/dL ({blood_sugar_status})
         - Meal: {meal}
         - Exercise: {exercise}
-        
-        Please provide personalized advice for diabetes management based on this data. 
-        Consider the blood sugar level, meal choices, and exercise routine. 
+
+        Please provide personalized advice for diabetes management based on this data.
+        Consider the blood sugar level, meal choices, and exercise routine.
         Give specific, actionable recommendations for diet, exercise, and lifestyle.
         """
 
@@ -112,9 +110,9 @@ class AIRecommendationEngine:
             context = f"""
             Blood sugar level: {blood_sugar} mg/dL
             User preferences: {preferences}
-            
-            Provide 3-4 meal suggestions that would be appropriate for this blood sugar level. 
-            Include breakfast, lunch, dinner, and snack options. Focus on balanced nutrition 
+
+            Provide 3-4 meal suggestions that would be appropriate for this blood sugar level.
+            Include breakfast, lunch, dinner, and snack options. Focus on balanced nutrition
             with appropriate carbohydrate content for diabetes management.
             """
 
@@ -143,7 +141,7 @@ class AIRecommendationEngine:
         if blood_sugar < 100:
             return """
             Meal Suggestions for Normal Blood Sugar:
-            
+
             Breakfast: Oatmeal with berries and nuts, or whole grain toast with avocado
             Lunch: Grilled chicken salad with mixed greens and olive oil dressing
             Dinner: Baked salmon with quinoa and steamed vegetables
@@ -152,7 +150,7 @@ class AIRecommendationEngine:
         elif blood_sugar < 140:
             return """
             Meal Suggestions for Post-Meal Normal Blood Sugar:
-            
+
             Breakfast: Greek yogurt with granola and fruit
             Lunch: Turkey and vegetable wrap with whole grain tortilla
             Dinner: Lean beef stir-fry with brown rice and vegetables
@@ -161,7 +159,7 @@ class AIRecommendationEngine:
         else:
             return """
             Meal Suggestions for Elevated Blood Sugar:
-            
+
             Breakfast: Scrambled eggs with spinach and whole grain toast
             Lunch: Grilled fish with quinoa and roasted vegetables
             Dinner: Chicken breast with sweet potato and green beans
@@ -182,8 +180,8 @@ class AIRecommendationEngine:
             context = f"""
             Blood sugar level: {blood_sugar} mg/dL
             Current exercise: {current_exercise}
-            
-            Provide exercise recommendations that are safe and beneficial for this blood sugar level. 
+
+            Provide exercise recommendations that are safe and beneficial for this blood sugar level.
             Include both aerobic and strength training suggestions, with appropriate intensity levels.
             """
 

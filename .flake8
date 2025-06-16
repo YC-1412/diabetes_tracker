@@ -4,7 +4,8 @@ extend-ignore =
     E203,
     E501,
     W503,
-    W504
+    W504,
+    F841,
 exclude = 
     .git,
     __pycache__,
