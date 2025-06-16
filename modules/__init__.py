@@ -1,1 +1,1 @@
-# Modules package for diabetes tracker 
+# Modules package for diabetes tracker
