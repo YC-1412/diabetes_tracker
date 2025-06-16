@@ -16,7 +16,7 @@ CORS(app)
 
 # Initialize modules
 data_manager = DataManager()
-ai_engine = AIRecommendationEngine()
+# ai_engine = AIRecommendationEngine()
 auth_manager = AuthManager()
 
 @app.route('/')
@@ -87,7 +87,7 @@ def log_entry():
         return jsonify({
             'message': 'Entry logged successfully',
             'entry_id': entry_id,
-            'recommendation': recommendation
+            # 'recommendation': recommendation
         }), 201
         
     except Exception as e:
