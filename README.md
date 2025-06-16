@@ -1,3 +1,5 @@
+[![Flake8 Lint](https://github.com/YC-1412/diabetes_tracker/actions/workflows/flake8.yml/badge.svg)](https://github.com/YC-1412/diabetes_tracker/actions/workflows/flake8.yml)
+
 # Diabetes Tracker - AI-Powered Management Assistant
 
 A comprehensive diabetes management application that combines user data logging with AI-powered recommendations using OpenAI's GPT model.
@@ -17,7 +19,13 @@ A comprehensive diabetes management application that combines user data logging 
 diabetes_tracker/
 ├── app.py                 # Main Flask application
 ├── requirements.txt       # Python dependencies
+├── requirements-dev.txt   # Development dependencies
+├── pyproject.toml        # Modern Python project configuration
+├── Makefile              # Development commands
+├── .flake8               # Flake8 configuration
 ├── .env.example          # Environment variables template
+├── .github/workflows/    # GitHub Actions CI/CD
+│   └── ci.yml           # Continuous integration workflow
 ├── modules/              # Backend modules
 │   ├── __init__.py
 │   ├── auth.py           # Authentication management
@@ -39,7 +47,7 @@ diabetes_tracker/
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.9 or higher
 - pip (Python package installer)
 
 ### Setup Instructions
@@ -63,7 +71,11 @@ diabetes_tracker/
 
 3. **Install dependencies**
    ```bash
+   # For production
    pip install -r requirements.txt
+   
+   # For development (includes testing tools)
+   pip install -r requirements-dev.txt
    ```
 
 4. **Set up environment variables**
@@ -82,6 +94,75 @@ diabetes_tracker/
 
 6. **Access the application**
    Open your web browser and go to: `http://localhost:5000`
+
+## Development
+
+### Quick Start
+
+The project includes a Makefile for common development tasks:
+
+```bash
+# Show all available commands
+make help
+
+# Install development dependencies
+make install-dev
+
+# Run linting
+make lint
+
+# Format code
+make format
+
+# Run tests
+make test
+
+# Run tests with coverage
+make test-cov
+
+# Run security checks
+make security
+
+# Run all CI checks locally
+make ci
+
+# Clean up generated files
+make clean
+```
+
+### Code Quality
+
+The project uses several tools to maintain code quality:
+
+- **Flake8**: Linting and style checking
+- **Black**: Code formatting
+- **isort**: Import sorting
+- **Bandit**: Security linting
+- **Safety**: Dependency vulnerability checking
+
+### Testing
+
+Run tests using pytest:
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=modules --cov-report=html
+
+# Run specific test file
+pytest test_app.py -v
+```
+
+### Continuous Integration
+
+The project includes GitHub Actions workflows that run on every push and pull request:
+
+- **Linting**: Flake8 checks for code style and syntax
+- **Testing**: Runs tests across multiple Python versions
+- **Security**: Bandit and Safety checks for vulnerabilities
+- **Coverage**: Code coverage reporting
 
 ## Configuration
 
@@ -168,26 +249,25 @@ This makes it easy to:
 - CORS protection
 - Secure session management
 
-## Development
+## Contributing
 
-### Adding New Features
+### Development Workflow
 
-The modular architecture makes it easy to extend:
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make your changes
+4. Run tests and linting: `make ci`
+5. Commit your changes: `git commit -m 'Add your feature'`
+6. Push to the branch: `git push origin feature/your-feature`
+7. Submit a pull request
 
-1. **Backend Modules**: Add new functionality in the `modules/` directory
-2. **API Endpoints**: Add new routes in `app.py`
-3. **Frontend**: Modify HTML, CSS, or JavaScript files
-4. **Database**: Extend the DataManager class for new data types
+### Code Style
 
-### Testing
-
-To test the application:
-
-1. Run the Flask application
-2. Register a test account
-3. Log several entries with different blood sugar levels
-4. Test the AI recommendation system
-5. Verify data persistence
+- Follow PEP 8 guidelines
+- Use Black for code formatting
+- Use isort for import sorting
+- Write tests for new features
+- Update documentation as needed
 
 ## Troubleshooting
 
@@ -208,6 +288,10 @@ To test the application:
 4. **Port already in use**
    - Change the port in `app.py`: `app.run(port=5001)`
 
+5. **Linting errors**
+   - Run `make format` to auto-format code
+   - Fix any remaining issues manually
+
 ### Getting Help
 
 If you encounter issues:
@@ -215,6 +299,7 @@ If you encounter issues:
 2. Check the Flask application logs
 3. Verify all environment variables are set correctly
 4. Ensure all dependencies are installed
+5. Run `make ci` to check for code quality issues
 
 ## Future Enhancements
 
