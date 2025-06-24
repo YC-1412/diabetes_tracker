@@ -124,6 +124,34 @@ class DataManager:
             "entries_this_week": entries_this_week,
         }
 
+    def get_chart_data(self, username: str) -> Dict:
+        """Get blood sugar data formatted for charting"""
+        try:
+            df = pd.read_csv(self.entries_file)
+            user_entries = df[df["username"] == username].copy()
+
+            if user_entries.empty:
+                return {"labels": [], "data": [], "dates": []}
+
+            # Convert date column to datetime
+            user_entries["date"] = pd.to_datetime(user_entries["date"])
+            
+            # Sort by date (oldest first for trend chart)
+            user_entries = user_entries.sort_values("date", ascending=True)
+
+            # Format dates for display
+            labels = user_entries["date"].dt.strftime("%m/%d").tolist()
+            data = user_entries["blood_sugar"].tolist()
+            dates = user_entries["date"].dt.strftime("%Y-%m-%d").tolist()
+
+            return {
+                "labels": labels,
+                "data": data,
+                "dates": dates
+            }
+        except FileNotFoundError:
+            return {"labels": [], "data": [], "dates": []}
+
     def delete_entry(self, entry_id: str) -> bool:
         """Delete a specific entry"""
         try:

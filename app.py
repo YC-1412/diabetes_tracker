@@ -117,6 +117,20 @@ def get_history(username):
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/chart-data/<username>", methods=["GET"])
+def get_chart_data(username):
+    """Get blood sugar data formatted for charting"""
+    try:
+        if not username:
+            return jsonify({"error": "Username is required"}), 400
+
+        chart_data = data_manager.get_chart_data(username)
+        return jsonify({"chart_data": chart_data}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # @app.route('/api/recommendation/<username>', methods=['GET'])
 # def get_recommendation(username):
 #     """Get AI recommendation for user"""

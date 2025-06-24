@@ -1,5 +1,6 @@
 // Global variables
 let currentUser = null;
+let bloodSugarChart = null;
 
 // DOM Elements
 const authSection = document.getElementById('auth-section');
@@ -192,6 +193,9 @@ async function loadUserData() {
         // Load history
         await loadHistory();
         
+        // Load chart data
+        await loadChartData();
+        
         // Load recommendation
         await loadRecommendation();
         
@@ -279,6 +283,128 @@ function displayHistory(history) {
     `).join('');
     
     historyContent.innerHTML = historyHTML;
+}
+
+async function loadChartData() {
+    try {
+        const response = await fetch(`/api/chart-data/${currentUser.username}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            createBloodSugarChart(data.chart_data);
+        }
+    } catch (error) {
+        console.error('Error loading chart data:', error);
+    }
+}
+
+function createBloodSugarChart(chartData) {
+    const chartContainer = document.querySelector('.chart-container');
+    const chartMessage = document.getElementById('chart-message');
+    const canvas = document.getElementById('bloodSugarChart');
+    
+    // Destroy existing chart if it exists
+    if (bloodSugarChart) {
+        bloodSugarChart.destroy();
+    }
+    
+    if (!chartData || !chartData.labels || chartData.labels.length === 0) {
+        chartContainer.style.display = 'none';
+        chartMessage.style.display = 'block';
+        return;
+    }
+    
+    // Show chart container and hide message
+    chartContainer.style.display = 'block';
+    chartMessage.style.display = 'none';
+    
+    // Create the chart
+    const ctx = canvas.getContext('2d');
+    bloodSugarChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                label: 'Blood Sugar (mg/dL)',
+                data: chartData.data,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#667eea',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        title: function(context) {
+                            return `Date: ${chartData.dates[context[0].dataIndex]}`;
+                        },
+                        label: function(context) {
+                            return `Blood Sugar: ${context.parsed.y} mg/dL`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        font: {
+                            size: 12
+                        },
+                        callback: function(value) {
+                            return value + ' mg/dL';
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            elements: {
+                point: {
+                    hoverBackgroundColor: '#764ba2'
+                }
+            }
+        }
+    });
 }
 
 async function loadRecommendation() {
