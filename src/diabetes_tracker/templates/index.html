@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Tracker - AI-Powered Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-heartbeat"></i> Diabetes Tracker</h1>
+                <p>AI-Powered Diabetes Management Assistant</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Login/Register Section -->
+            <div id="auth-section" class="auth-section">
+                <div class="auth-tabs">
+                    <button class="tab-btn active" onclick="showTab('login')">Login</button>
+                    <button class="tab-btn" onclick="showTab('register')">Register</button>
+                </div>
+
+                <!-- Login Form -->
+                <div id="login-tab" class="auth-tab active">
+                    <form id="login-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="login-username">Username</label>
+                            <input type="text" id="login-username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                </div>
+
+                <!-- Register Form -->
+                <div id="register-tab" class="auth-tab">
+                    <form id="register-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="register-username">Username</label>
+                            <input type="text" id="register-username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-password">Password</label>
+                            <input type="password" id="register-password" name="password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm Password</label>
+                            <input type="password" id="confirm-password" name="confirm_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Register</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="dashboard-section hidden">
+                <div class="dashboard-header">
+                    <h2>Welcome, <span id="user-display"></span>!</h2>
+                    <button id="logout-btn" class="btn btn-secondary">Logout</button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-entries">0</h3>
+                            <p>Total Entries</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="avg-blood-sugar">0</h3>
+                            <p>Avg Blood Sugar</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-week"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="entries-this-week">0</h3>
+                            <p>This Week</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Blood Sugar Trend Chart -->
+                <div class="chart-section">
+                    <h3><i class="fas fa-chart-line"></i> Blood Sugar Trend</h3>
+                    <div class="chart-container">
+                        <canvas id="bloodSugarChart"></canvas>
+                    </div>
+                    <div id="chart-message" class="chart-message">
+                        <p>Log entries to see your blood sugar trend!</p>
+                    </div>
+                </div>
+
+                <!-- Log Entry Form -->
+                <div class="log-entry-section">
+                    <h3>Log Today's Entry</h3>
+                    <form id="log-entry-form" class="log-entry-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="blood-sugar">Blood Sugar (mg/dL)</label>
+                                <input type="number" id="blood-sugar" name="blood_sugar" min="50" max="500" step="0.1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="date">Date</label>
+                                <input type="date" id="date" name="date" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="meal">Meal Description</label>
+                                <textarea id="meal" name="meal" placeholder="What did you eat today?" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="exercise">Exercise</label>
+                                <textarea id="exercise" name="exercise" placeholder="What exercise did you do today?" required></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Entry</button>
+                    </form>
+                </div>
+
+                <!-- AI Recommendation -->
+                <div class="recommendation-section">
+                    <h3><i class="fas fa-robot"></i> AI Recommendation</h3>
+                    <div id="recommendation-content" class="recommendation-content">
+                        <p>Log an entry to get personalized recommendations!</p>
+                    </div>
+                    <button id="refresh-recommendation" class="btn btn-secondary">Refresh Recommendation</button>
+                </div>
+
+                <!-- History Section -->
+                <div class="history-section">
+                    <h3>Your History</h3>
+                    <div id="history-content" class="history-content">
+                        <p>No entries yet. Start logging to see your history!</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <p>Processing...</p>
+        </div>
+
+        <!-- Notification -->
+        <div id="notification" class="notification hidden">
+            <span id="notification-message"></span>
+            <button id="notification-close" class="notification-close">&times;</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html> 

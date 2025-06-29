@@ -1,17 +1,22 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+import os
 
 # Import our modules
-from modules.database import DataManager
-
-# from modules.ai_recommendations import AIRecommendationEngine
-from modules.auth import AuthManager
+from .modules.database import DataManager
+# from .modules.ai_recommendations import AIRecommendationEngine
+from .modules.auth import AuthManager
 
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
+# Get the directory where this file is located
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(__name__, 
+            template_folder=os.path.join(current_dir, 'templates'),
+            static_folder=os.path.join(current_dir, 'static'))
 CORS(app)
 
 # Initialize modules

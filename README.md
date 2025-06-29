@@ -17,7 +17,7 @@ A comprehensive diabetes management application that combines user data logging 
 
 ```
 diabetes_tracker/
-├── app.py                 # Main Flask application
+├── main.py                # Application entry point
 ├── requirements.txt       # Python dependencies
 ├── requirements-dev.txt   # Development dependencies
 ├── pyproject.toml        # Modern Python project configuration
@@ -26,18 +26,22 @@ diabetes_tracker/
 ├── .env.example          # Environment variables template
 ├── .github/workflows/    # GitHub Actions CI/CD
 │   └── ci.yml           # Continuous integration workflow
-├── modules/              # Backend modules
-│   ├── __init__.py
-│   ├── auth.py           # Authentication management
-│   ├── database.py       # Data storage and retrieval
-│   └── ai_recommendations.py # AI recommendation engine
-├── templates/            # HTML templates
-│   └── index.html        # Main application page
-├── static/               # Static assets
-│   ├── css/
-│   │   └── style.css     # Application styling
-│   └── js/
-│       └── app.js        # Frontend JavaScript
+├── src/                  # Source code package
+│   └── diabetes_tracker/ # Main application package
+│       ├── __init__.py   # Package initialization
+│       ├── app.py        # Main Flask application
+│       ├── modules/      # Backend modules
+│       │   ├── __init__.py
+│       │   ├── auth.py           # Authentication management
+│       │   ├── database.py       # Data storage and retrieval
+│       │   └── ai_recommendations.py # AI recommendation engine
+│       ├── templates/    # HTML templates
+│       │   └── index.html        # Main application page
+│       └── static/       # Static assets
+│           ├── css/
+│           │   └── style.css     # Application styling
+│           └── js/
+│               └── app.js        # Frontend JavaScript
 └── data/                 # CSV data storage (created automatically)
     ├── users.csv         # User accounts
     └── diabetes_entries.csv # Diabetes data entries
@@ -89,11 +93,11 @@ diabetes_tracker/
 
 5. **Run the application**
    ```bash
-   python app.py
+   python main.py
    ```
 
 6. **Access the application**
-   Open your web browser and go to: `http://localhost:5000`
+   Open your web browser and go to: `http://localhost:5001`
 
 ## Development
 
@@ -149,7 +153,7 @@ Run tests using pytest:
 pytest
 
 # Run with coverage
-pytest --cov=modules --cov-report=html
+pytest --cov=src/diabetes_tracker --cov-report=html
 
 # Run specific test file
 pytest test_app.py -v
