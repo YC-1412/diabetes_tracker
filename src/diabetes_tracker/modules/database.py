@@ -1,168 +1,260 @@
-import pandas as pd
 import os
 import uuid
-from datetime import datetime
-from typing import List, Dict
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional
+from sqlalchemy import create_engine, Column, String, Float, DateTime, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.exc import SQLAlchemyError
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+Base = declarative_base()
+
+
+class User(Base):
+    """User model for PostgreSQL database"""
+    __tablename__ = 'users'
+    
+    username = Column(String(50), primary_key=True)
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DiabetesEntry(Base):
+    """Diabetes entry model for PostgreSQL database"""
+    __tablename__ = 'diabetes_entries'
+    
+    entry_id = Column(String(36), primary_key=True)
+    username = Column(String(50), nullable=False)
+    blood_sugar = Column(Float, nullable=False)
+    meal = Column(Text, nullable=False)
+    exercise = Column(Text, nullable=False)
+    date = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class DataManager:
-    """Manages data storage and retrieval using CSV files"""
+    """Manages data storage and retrieval using PostgreSQL database"""
 
     def __init__(self):
-        self.data_dir = "data"
-        self.users_file = os.path.join(self.data_dir, "users.csv")
-        self.entries_file = os.path.join(self.data_dir, "diabetes_entries.csv")
-        self._ensure_data_directory()
-        self._initialize_files()
+        # Get database connection details from environment variables
+        self.db_host = os.getenv('DB_HOST', 'localhost')
+        self.db_port = os.getenv('DB_PORT', '5432')
+        self.db_name = os.getenv('DB_NAME', 'diabetes_tracker')
+        self.db_user = os.getenv('DB_USER', 'postgres')
+        self.db_password = os.getenv('DB_PASSWORD', '')
+        
+        # Create database URL
+        self.database_url = f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+        
+        # Initialize database connection
+        self.engine = None
+        self.SessionLocal = None
+        self._initialize_database()
 
-    def _ensure_data_directory(self):
-        """Create data directory if it doesn't exist"""
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
+    def _initialize_database(self):
+        """Initialize database connection and create tables"""
+        try:
+            self.engine = create_engine(self.database_url, echo=False)
+            self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+            
+            # Create tables
+            Base.metadata.create_all(bind=self.engine)
+            logger.info("Database initialized successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize database: {e}")
+            raise
 
-    def _initialize_files(self):
-        """Initialize CSV files with headers if they don't exist"""
-        # Initialize users file
-        if not os.path.exists(self.users_file):
-            users_df = pd.DataFrame(columns=["username", "password_hash", "created_at"])
-            users_df.to_csv(self.users_file, index=False)
-
-        # Initialize entries file
-        if not os.path.exists(self.entries_file):
-            entries_df = pd.DataFrame(
-                columns=[
-                    "entry_id",
-                    "username",
-                    "blood_sugar",
-                    "meal",
-                    "exercise",
-                    "date",
-                    "created_at",
-                ]
-            )
-            entries_df.to_csv(self.entries_file, index=False)
+    def get_db_session(self) -> Session:
+        """Get a database session"""
+        return self.SessionLocal()
 
     def save_entry(
         self, username: str, blood_sugar: float, meal: str, exercise: str, date: str
     ) -> str:
         """Save a new diabetes entry"""
         entry_id = str(uuid.uuid4())
-        created_at = datetime.now().isoformat()
-
-        new_entry = {
-            "entry_id": entry_id,
-            "username": username,
-            "blood_sugar": blood_sugar,
-            "meal": meal,
-            "exercise": exercise,
-            "date": date,
-            "created_at": created_at,
-        }
-
-        # Read existing data
+        
         try:
-            df = pd.read_csv(self.entries_file)
-        except FileNotFoundError:
-            df = pd.DataFrame(
-                columns=[
-                    "entry_id",
-                    "username",
-                    "blood_sugar",
-                    "meal",
-                    "exercise",
-                    "date",
-                    "created_at",
-                ]
+            # Parse date string to datetime
+            entry_date = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            
+            new_entry = DiabetesEntry(
+                entry_id=entry_id,
+                username=username,
+                blood_sugar=blood_sugar,
+                meal=meal,
+                exercise=exercise,
+                date=entry_date,
+                created_at=datetime.utcnow()
             )
-
-        # Add new entry
-        df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
-        df.to_csv(self.entries_file, index=False)
-
-        return entry_id
+            
+            with self.get_db_session() as session:
+                session.add(new_entry)
+                session.commit()
+                
+            logger.info(f"Entry saved successfully: {entry_id}")
+            return entry_id
+            
+        except SQLAlchemyError as e:
+            logger.error(f"Database error saving entry: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Error saving entry: {e}")
+            raise
 
     def get_user_history(self, username: str) -> List[Dict]:
         """Get all entries for a specific user"""
         try:
-            df = pd.read_csv(self.entries_file)
-            user_entries = df[df["username"] == username].copy()
-
-            # Sort by date (most recent first)
-            user_entries["date"] = pd.to_datetime(user_entries["date"])
-            user_entries = user_entries.sort_values("date", ascending=False)
-
-            return user_entries.to_dict("records")
-        except FileNotFoundError:
+            with self.get_db_session() as session:
+                entries = session.query(DiabetesEntry)\
+                    .filter(DiabetesEntry.username == username)\
+                    .order_by(DiabetesEntry.date.desc())\
+                    .all()
+                
+                return [
+                    {
+                        "entry_id": entry.entry_id,
+                        "username": entry.username,
+                        "blood_sugar": entry.blood_sugar,
+                        "meal": entry.meal,
+                        "exercise": entry.exercise,
+                        "date": entry.date.isoformat(),
+                        "created_at": entry.created_at.isoformat()
+                    }
+                    for entry in entries
+                ]
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Database error getting user history: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Error getting user history: {e}")
             return []
 
     def get_recent_entries(self, username: str, limit: int = 5) -> List[Dict]:
         """Get recent entries for a user"""
-        history = self.get_user_history(username)
-        return history[:limit]
+        try:
+            with self.get_db_session() as session:
+                entries = session.query(DiabetesEntry)\
+                    .filter(DiabetesEntry.username == username)\
+                    .order_by(DiabetesEntry.date.desc())\
+                    .limit(limit)\
+                    .all()
+                
+                return [
+                    {
+                        "entry_id": entry.entry_id,
+                        "username": entry.username,
+                        "blood_sugar": entry.blood_sugar,
+                        "meal": entry.meal,
+                        "exercise": entry.exercise,
+                        "date": entry.date.isoformat(),
+                        "created_at": entry.created_at.isoformat()
+                    }
+                    for entry in entries
+                ]
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Database error getting recent entries: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Error getting recent entries: {e}")
+            return []
 
     def get_user_stats(self, username: str) -> Dict:
         """Get statistics for a user"""
-        history = self.get_user_history(username)
-
-        if not history:
+        try:
+            with self.get_db_session() as session:
+                # Get total entries
+                total_entries = session.query(DiabetesEntry)\
+                    .filter(DiabetesEntry.username == username)\
+                    .count()
+                
+                if total_entries == 0:
+                    return {"total_entries": 0, "avg_blood_sugar": 0, "entries_this_week": 0}
+                
+                # Get average blood sugar
+                avg_blood_sugar = session.query(DiabetesEntry.blood_sugar)\
+                    .filter(DiabetesEntry.username == username)\
+                    .all()
+                avg_blood_sugar = sum([entry[0] for entry in avg_blood_sugar]) / len(avg_blood_sugar)
+                
+                # Get entries this week
+                week_ago = datetime.utcnow() - timedelta(days=7)
+                entries_this_week = session.query(DiabetesEntry)\
+                    .filter(DiabetesEntry.username == username)\
+                    .filter(DiabetesEntry.date >= week_ago)\
+                    .count()
+                
+                return {
+                    "total_entries": total_entries,
+                    "avg_blood_sugar": round(avg_blood_sugar, 1),
+                    "entries_this_week": entries_this_week,
+                }
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Database error getting user stats: {e}")
             return {"total_entries": 0, "avg_blood_sugar": 0, "entries_this_week": 0}
-
-        df = pd.DataFrame(history)
-        df["date"] = pd.to_datetime(df["date"])
-
-        # Calculate statistics
-        total_entries = len(df)
-        avg_blood_sugar = df["blood_sugar"].mean()
-
-        # Entries this week
-        week_ago = datetime.now() - pd.Timedelta(days=7)
-        entries_this_week = len(df[df["date"] >= week_ago])
-
-        return {
-            "total_entries": total_entries,
-            "avg_blood_sugar": round(avg_blood_sugar, 1),
-            "entries_this_week": entries_this_week,
-        }
+        except Exception as e:
+            logger.error(f"Error getting user stats: {e}")
+            return {"total_entries": 0, "avg_blood_sugar": 0, "entries_this_week": 0}
 
     def get_chart_data(self, username: str) -> Dict:
         """Get blood sugar data formatted for charting"""
         try:
-            df = pd.read_csv(self.entries_file)
-            user_entries = df[df["username"] == username].copy()
-
-            if user_entries.empty:
-                return {"labels": [], "data": [], "dates": []}
-
-            # Convert date column to datetime
-            user_entries["date"] = pd.to_datetime(user_entries["date"])
-            
-            # Sort by date (oldest first for trend chart)
-            user_entries = user_entries.sort_values("date", ascending=True)
-
-            # Format dates for display
-            labels = user_entries["date"].dt.strftime("%m/%d").tolist()
-            data = user_entries["blood_sugar"].tolist()
-            dates = user_entries["date"].dt.strftime("%Y-%m-%d").tolist()
-
-            return {
-                "labels": labels,
-                "data": data,
-                "dates": dates
-            }
-        except FileNotFoundError:
+            with self.get_db_session() as session:
+                entries = session.query(DiabetesEntry)\
+                    .filter(DiabetesEntry.username == username)\
+                    .order_by(DiabetesEntry.date.asc())\
+                    .all()
+                
+                if not entries:
+                    return {"labels": [], "data": [], "dates": []}
+                
+                # Format data for charting
+                labels = [entry.date.strftime("%m/%d") for entry in entries]
+                data = [entry.blood_sugar for entry in entries]
+                dates = [entry.date.strftime("%Y-%m-%d") for entry in entries]
+                
+                return {
+                    "labels": labels,
+                    "data": data,
+                    "dates": dates
+                }
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Database error getting chart data: {e}")
+            return {"labels": [], "data": [], "dates": []}
+        except Exception as e:
+            logger.error(f"Error getting chart data: {e}")
             return {"labels": [], "data": [], "dates": []}
 
     def delete_entry(self, entry_id: str) -> bool:
         """Delete a specific entry"""
         try:
-            df = pd.read_csv(self.entries_file)
-            original_length = len(df)
-
-            df = df[df["entry_id"] != entry_id]
-
-            if len(df) < original_length:
-                df.to_csv(self.entries_file, index=False)
-                return True
+            with self.get_db_session() as session:
+                entry = session.query(DiabetesEntry)\
+                    .filter(DiabetesEntry.entry_id == entry_id)\
+                    .first()
+                
+                if entry:
+                    session.delete(entry)
+                    session.commit()
+                    logger.info(f"Entry deleted successfully: {entry_id}")
+                    return True
+                else:
+                    logger.warning(f"Entry not found for deletion: {entry_id}")
+                    return False
+                    
+        except SQLAlchemyError as e:
+            logger.error(f"Database error deleting entry: {e}")
             return False
-        except FileNotFoundError:
+        except Exception as e:
+            logger.error(f"Error deleting entry: {e}")
             return False
