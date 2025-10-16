@@ -417,7 +417,9 @@ class TestFlaskApplication:
     def test_import_flask_app(self):
         """Test that Flask app can be imported"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 assert app is not None
         except ImportError as e:
@@ -426,7 +428,9 @@ class TestFlaskApplication:
     def test_home_route(self):
         """Test home route returns 200"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -438,7 +442,9 @@ class TestFlaskApplication:
     def test_register_route_exists(self):
         """Test register route exists and handles missing data"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -452,7 +458,9 @@ class TestFlaskApplication:
     def test_login_route_exists(self):
         """Test login route exists and handles missing data"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -466,7 +474,9 @@ class TestFlaskApplication:
     def test_log_entry_route_exists(self):
         """Test log entry route exists and handles missing data"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -480,7 +490,9 @@ class TestFlaskApplication:
     def test_history_route_exists(self):
         """Test history route exists"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -493,7 +505,9 @@ class TestFlaskApplication:
     def test_chart_data_route_exists(self):
         """Test chart data route exists"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -506,7 +520,9 @@ class TestFlaskApplication:
     def test_change_password_route_exists(self):
         """Test change password route exists"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -523,7 +539,9 @@ class TestFlaskApplication:
     def test_change_password_success(self):
         """Test successful password change via API"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with patch('diabetes_tracker.app.auth_manager') as mock_auth_manager:
@@ -552,7 +570,9 @@ class TestFlaskApplication:
     def test_change_password_invalid_old_password(self):
         """Test password change with invalid old password via API"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with patch('diabetes_tracker.app.auth_manager') as mock_auth_manager:
@@ -580,7 +600,9 @@ class TestFlaskApplication:
     def test_change_password_missing_fields(self):
         """Test password change with missing fields via API"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -610,7 +632,9 @@ class TestFlaskApplication:
     def test_change_password_short_password(self):
         """Test password change with too short new password via API"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
