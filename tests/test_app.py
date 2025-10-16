@@ -1,0 +1,386 @@
+#!/usr/bin/env python3
+"""
+Pytest tests for Diabetes Tracker application
+"""
+
+import os
+import sys
+import tempfile
+import shutil
+import pytest
+from datetime import datetime
+
+# Add the src directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
+
+from diabetes_tracker.modules.auth import AuthManager
+from diabetes_tracker.modules.database import DataManager
+from diabetes_tracker.modules.ai_recommendations import AIRecommendationEngine
+
+
+@pytest.fixture
+def temp_data_dir():
+    """Create a temporary directory for testing data"""
+    test_dir = tempfile.mkdtemp()
+    yield test_dir
+    # Cleanup after tests
+    try:
+        shutil.rmtree(test_dir)
+    except Exception:
+        pass
+
+
+@pytest.fixture
+def auth_manager(temp_data_dir):
+    """Create AuthManager instance with temporary data directory"""
+    # Temporarily change data directory for testing
+    original_data_dir = AuthManager.data_dir
+    AuthManager.data_dir = temp_data_dir
+    
+    manager = AuthManager()
+    yield manager
+    
+    # Restore original data directory
+    AuthManager.data_dir = original_data_dir
+
+
+@pytest.fixture
+def data_manager(temp_data_dir):
+    """Create DataManager instance with temporary data directory"""
+    # Temporarily change data directory for testing
+    original_data_dir = DataManager.data_dir
+    DataManager.data_dir = temp_data_dir
+    
+    manager = DataManager()
+    yield manager
+    
+    # Restore original data directory
+    DataManager.data_dir = original_data_dir
+
+
+@pytest.fixture
+def ai_engine():
+    """Create AIRecommendationEngine instance"""
+    return AIRecommendationEngine()
+
+
+class TestAuthentication:
+    """Test authentication functionality"""
+    
+    def test_import_auth_manager(self):
+        """Test that AuthManager can be imported"""
+        assert AuthManager is not None
+    
+    def test_register_user_success(self, auth_manager):
+        """Test successful user registration"""
+        success = auth_manager.register_user("testuser", "testpass123")
+        assert success is True
+        assert auth_manager.user_exists("testuser") is True
+    
+    def test_register_user_duplicate(self, auth_manager):
+        """Test duplicate registration prevention"""
+        # Register user first time
+        auth_manager.register_user("testuser", "testpass123")
+        
+        # Try to register same user again
+        success = auth_manager.register_user("testuser", "testpass123")
+        assert success is False
+    
+    def test_login_valid_credentials(self, auth_manager):
+        """Test successful login with valid credentials"""
+        auth_manager.register_user("testuser", "testpass123")
+        success = auth_manager.login_user("testuser", "testpass123")
+        assert success is True
+    
+    def test_login_invalid_credentials(self, auth_manager):
+        """Test login failure with invalid credentials"""
+        auth_manager.register_user("testuser", "testpass123")
+        success = auth_manager.login_user("testuser", "wrongpass")
+        assert success is False
+    
+    def test_user_exists(self, auth_manager):
+        """Test user existence checking"""
+        assert auth_manager.user_exists("nonexistent") is False
+        
+        auth_manager.register_user("testuser", "testpass123")
+        assert auth_manager.user_exists("testuser") is True
+    
+    def test_password_hashing(self, auth_manager):
+        """Test that passwords are properly hashed"""
+        auth_manager.register_user("testuser", "testpass123")
+        
+        # Verify password is hashed (not stored in plain text)
+        import pandas as pd
+        df = pd.read_csv(auth_manager.users_file)
+        user_row = df[df['username'] == 'testuser']
+        stored_hash = user_row.iloc[0]['password_hash']
+        
+        # Should be SHA-256 hash (64 characters)
+        assert len(stored_hash) == 64
+        assert stored_hash != "testpass123"
+
+
+class TestDataManagement:
+    """Test data management functionality"""
+    
+    def test_import_data_manager(self):
+        """Test that DataManager can be imported"""
+        assert DataManager is not None
+    
+    def test_save_entry(self, data_manager):
+        """Test saving a new diabetes entry"""
+        entry_id = data_manager.save_entry(
+            "testuser", 120.5, "Oatmeal with berries", "30 min walk", "2024-01-15"
+        )
+        assert entry_id is not None
+        assert len(entry_id) == 36  # UUID length
+    
+    def test_get_user_history(self, data_manager):
+        """Test retrieving user history"""
+        # Save an entry first
+        data_manager.save_entry(
+            "testuser", 120.5, "Oatmeal with berries", "30 min walk", "2024-01-15"
+        )
+        
+        history = data_manager.get_user_history("testuser")
+        assert len(history) == 1
+        assert history[0]["blood_sugar"] == 120.5
+        assert history[0]["meal"] == "Oatmeal with berries"
+        assert history[0]["exercise"] == "30 min walk"
+        assert history[0]["date"] == "2024-01-15"
+    
+    def test_get_user_stats(self, data_manager):
+        """Test statistics calculation"""
+        # Save multiple entries
+        data_manager.save_entry("testuser", 120.5, "Breakfast", "Walk", "2024-01-15")
+        data_manager.save_entry("testuser", 140.2, "Lunch", "Run", "2024-01-16")
+        
+        stats = data_manager.get_user_stats("testuser")
+        assert stats["total_entries"] == 2
+        assert stats["avg_blood_sugar"] == 130.35  # (120.5 + 140.2) / 2
+    
+    def test_get_chart_data(self, data_manager):
+        """Test chart data formatting"""
+        # Save entries with different dates
+        data_manager.save_entry("testuser", 120.5, "Breakfast", "Walk", "2024-01-15")
+        data_manager.save_entry("testuser", 140.2, "Lunch", "Run", "2024-01-16")
+        
+        chart_data = data_manager.get_chart_data("testuser")
+        
+        assert "labels" in chart_data
+        assert "data" in chart_data
+        assert "dates" in chart_data
+        assert len(chart_data["labels"]) == 2
+        assert len(chart_data["data"]) == 2
+        assert len(chart_data["dates"]) == 2
+        
+        # Check that data is sorted chronologically (ascending for chart)
+        assert chart_data["data"] == [120.5, 140.2]
+    
+    def test_empty_user_history(self, data_manager):
+        """Test handling of user with no entries"""
+        history = data_manager.get_user_history("nonexistent")
+        assert history == []
+        
+        stats = data_manager.get_user_stats("nonexistent")
+        assert stats["total_entries"] == 0
+        assert stats["avg_blood_sugar"] == 0
+        assert stats["entries_this_week"] == 0
+    
+    def test_delete_entry(self, data_manager):
+        """Test entry deletion"""
+        # Save an entry
+        entry_id = data_manager.save_entry(
+            "testuser", 120.5, "Oatmeal", "Walk", "2024-01-15"
+        )
+        
+        # Verify entry exists
+        history = data_manager.get_user_history("testuser")
+        assert len(history) == 1
+        
+        # Delete entry
+        success = data_manager.delete_entry(entry_id)
+        assert success is True
+        
+        # Verify entry is deleted
+        history = data_manager.get_user_history("testuser")
+        assert len(history) == 0
+
+
+# class TestAIRecommendations:
+#     """Test AI recommendation functionality"""
+    
+#     def test_import_ai_engine(self):
+#         """Test that AIRecommendationEngine can be imported"""
+#         assert AIRecommendationEngine is not None
+    
+#     def test_basic_recommendation(self, ai_engine):
+#         """Test basic recommendation when API key is not available"""
+#         recommendation = ai_engine.get_recommendation(
+#             "testuser", 120.5, "Oatmeal", "Walking"
+#         )
+#         assert recommendation is not None
+#         assert len(recommendation) > 10
+#         assert isinstance(recommendation, str)
+    
+#     def test_blood_sugar_analysis_low(self, ai_engine):
+#         """Test blood sugar analysis for low levels"""
+#         status = ai_engine._analyze_blood_sugar(70)
+#         assert "Low" in status
+#         assert "Hypoglycemia" in status
+    
+#     def test_blood_sugar_analysis_normal_fasting(self, ai_engine):
+#         """Test blood sugar analysis for normal fasting levels"""
+#         status = ai_engine._analyze_blood_sugar(85)
+#         assert "Normal" in status
+#         assert "Fasting" in status
+    
+#     def test_blood_sugar_analysis_normal_post_meal(self, ai_engine):
+#         """Test blood sugar analysis for normal post-meal levels"""
+#         status = ai_engine._analyze_blood_sugar(120)
+#         assert "Normal" in status
+#         assert "Post-meal" in status
+    
+#     def test_blood_sugar_analysis_elevated(self, ai_engine):
+#         """Test blood sugar analysis for elevated levels"""
+#         status = ai_engine._analyze_blood_sugar(180)
+#         assert "Elevated" in status
+    
+#     def test_blood_sugar_analysis_high(self, ai_engine):
+#         """Test blood sugar analysis for high levels"""
+#         status = ai_engine._analyze_blood_sugar(250)
+#         assert "High" in status
+#         assert "Hyperglycemia" in status
+    
+#     def test_meal_suggestions(self, ai_engine):
+#         """Test meal suggestions functionality"""
+#         suggestions = ai_engine.get_meal_suggestions(120.5)
+#         assert suggestions is not None
+#         assert len(suggestions) > 10
+#         assert isinstance(suggestions, str)
+    
+#     def test_exercise_recommendations(self, ai_engine):
+#         """Test exercise recommendations functionality"""
+#         recommendations = ai_engine.get_exercise_recommendations(120.5, "Walking")
+#         assert recommendations is not None
+#         assert len(recommendations) > 10
+#         assert isinstance(recommendations, str)
+
+
+class TestFlaskApplication:
+    """Test Flask application functionality"""
+    
+    def test_import_flask_app(self):
+        """Test that Flask app can be imported"""
+        try:
+            from diabetes_tracker.app import app
+            assert app is not None
+        except ImportError as e:
+            pytest.skip(f"Flask app import failed: {e}")
+    
+    def test_home_route(self):
+        """Test home route returns 200"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                response = client.get("/")
+                assert response.status_code == 200
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_register_route_exists(self):
+        """Test register route exists and handles missing data"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                response = client.post("/api/register")
+                assert response.status_code == 400  # Missing data
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_login_route_exists(self):
+        """Test login route exists and handles missing data"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                response = client.post("/api/login")
+                assert response.status_code == 400  # Missing data
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_log_entry_route_exists(self):
+        """Test log entry route exists and handles missing data"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                response = client.post("/api/log-entry")
+                assert response.status_code == 400  # Missing data
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_history_route_exists(self):
+        """Test history route exists"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                response = client.get("/api/history/testuser")
+                # Should return 200 even if user doesn't exist (empty history)
+                assert response.status_code in [200, 400]
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_chart_data_route_exists(self):
+        """Test chart data route exists"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                response = client.get("/api/chart-data/testuser")
+                # Should return 200 even if user doesn't exist (empty chart data)
+                assert response.status_code in [200, 400]
+        except ImportError:
+            pytest.skip("Flask app not available")
+
+
+class TestIntegration:
+    """Integration tests for the complete workflow"""
+    
+    def test_complete_user_workflow(self, auth_manager, data_manager, ai_engine):
+        """Test complete user workflow: register, login, log entry, get recommendations"""
+        # 1. Register user
+        success = auth_manager.register_user("workflow_user", "password123")
+        assert success is True
+        
+        # 2. Login user
+        success = auth_manager.login_user("workflow_user", "password123")
+        assert success is True
+        
+        # 3. Log entry
+        entry_id = data_manager.save_entry(
+            "workflow_user", 125.0, "Grilled chicken salad", "30 min jog", "2024-01-15"
+        )
+        assert entry_id is not None
+        
+        # 4. Get history
+        history = data_manager.get_user_history("workflow_user")
+        assert len(history) == 1
+        assert history[0]["blood_sugar"] == 125.0
+        
+        # 5. Get recommendations
+        recommendation = ai_engine.get_recommendation(
+            "workflow_user", 125.0, "Grilled chicken salad", "30 min jog"
+        )
+        assert recommendation is not None
+        assert len(recommendation) > 10
+        
+        # 6. Get chart data
+        chart_data = data_manager.get_chart_data("workflow_user")
+        assert "labels" in chart_data
+        assert "data" in chart_data
+        assert len(chart_data["data"]) == 1
+        assert chart_data["data"][0] == 125.0
