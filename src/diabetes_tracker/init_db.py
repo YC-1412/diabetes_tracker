@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # Add the parent directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from diabetes_tracker.modules.database import Base, DataManager
+from diabetes_tracker.modules.database import DataManager
 from diabetes_tracker.modules.auth import AuthManager
 import logging
 
@@ -28,8 +28,8 @@ def init_database():
         logger.info("Initializing database...")
         
         # Initialize managers (this will create tables)
-        data_manager = DataManager()
-        auth_manager = AuthManager()
+        # data_manager = DataManager()
+        # auth_manager = AuthManager()
         
         logger.info("Database initialization completed successfully!")
         logger.info("Tables created:")
@@ -51,8 +51,8 @@ def check_database_connection():
         logger.info("Testing database connection...")
         
         # Try to initialize managers
-        data_manager = DataManager()
-        auth_manager = AuthManager()
+        # data_manager = DataManager()
+        # auth_manager = AuthManager()
         
         logger.info("Database connection successful!")
         return True

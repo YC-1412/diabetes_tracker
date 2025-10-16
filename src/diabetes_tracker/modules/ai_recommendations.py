@@ -60,7 +60,7 @@ class AIRecommendationEngine:
         """Create context string for AI recommendation"""
 
         # Analyze blood sugar level
-        blood_sugar_status = self._analyze_blood_sugar(blood_sugar)
+        # blood_sugar_status = self._analyze_blood_sugar(blood_sugar)
 
         context = f"""
         User: {username}

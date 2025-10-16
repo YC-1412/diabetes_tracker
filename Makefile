@@ -10,17 +10,14 @@ install: ## Install production dependencies
 install-dev: ## Install development dependencies
 	pip install -r requirements-dev.txt
 
-lint: ## Run flake8 linting
-	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+lint: ## Run ruff linting
+	ruff check .
 
-format: ## Format code with black and isort
-	black .
-	isort .
+format: ## Format code with ruff
+	ruff format .
 
 check-format: ## Check if code is formatted correctly
-	black . --check
-	isort . --check-only
+	ruff format --check .
 
 test: ## Run all tests with pytest
 	python -m pytest tests/ -v
