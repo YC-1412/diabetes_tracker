@@ -57,7 +57,7 @@ def fix_database_permissions():
         # Commit the changes
         conn.commit()
         
-        print("✅ Database permissions fixed successfully!")
+        print("Database permissions fixed successfully!")
         
         # Test the permissions
         print("Testing permissions...")
@@ -70,10 +70,10 @@ def fix_database_permissions():
         print(f"Diabetes entries table accessible. Current entry count: {entry_count}")
         
     except psycopg2.Error as e:
-        print(f"❌ Database error: {e}")
+        print(f"Database error: {e}")
         return False
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         return False
     finally:
         if 'conn' in locals():
@@ -86,8 +86,8 @@ if __name__ == "__main__":
     print("=" * 40)
     
     if fix_database_permissions():
-        print("\n🎉 All permissions have been fixed!")
+        print("\nAll permissions have been fixed!")
         print("You should now be able to register and login users.")
     else:
-        print("\n❌ Failed to fix permissions.")
+        print("\nFailed to fix permissions.")
         print("Please check your database configuration and try again.") 

@@ -28,17 +28,17 @@ def test_connection():
         
         print("\nInitializing DataManager...")
         data_manager = DataManager()
-        print("✓ DataManager initialized successfully")
+        print("DataManager initialized successfully")
         
         print("\nInitializing AuthManager...")
         auth_manager = AuthManager()
-        print("✓ AuthManager initialized successfully")
+        print("AuthManager initialized successfully")
         
-        print("\n🎉 Database connection successful!")
+        print("\nDatabase connection successful!")
         return True
         
     except Exception as e:
-        print(f"\n❌ Database connection failed: {e}")
+        print(f"\nDatabase connection failed: {e}")
         print("\nPlease check:")
         print("1. Your .env file exists and has correct database credentials")
         print("2. PostgreSQL is running and accessible")

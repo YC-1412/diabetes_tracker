@@ -75,7 +75,7 @@ def recreate_tables():
         # Commit the changes
         conn.commit()
         
-        print("✅ Tables recreated successfully!")
+        print("Tables recreated successfully!")
         
         # Test the permissions
         print("Testing table access...")
@@ -95,18 +95,18 @@ def recreate_tables():
             ON CONFLICT (username) DO NOTHING;
         """)
         conn.commit()
-        print("✅ User insertion test successful!")
+        print("User insertion test successful!")
         
         # Clean up test user
         cursor.execute("DELETE FROM users WHERE username = 'testuser';")
         conn.commit()
-        print("✅ Test user cleaned up!")
+        print("Test user cleaned up!")
         
     except psycopg2.Error as e:
-        print(f"❌ Database error: {e}")
+        print(f"Database error: {e}")
         return False
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         return False
     finally:
         if 'conn' in locals():
@@ -119,8 +119,8 @@ if __name__ == "__main__":
     print("=" * 40)
     
     if recreate_tables():
-        print("\n🎉 Tables have been recreated successfully!")
+        print("\nTables have been recreated successfully!")
         print("You should now be able to register and login users.")
     else:
-        print("\n❌ Failed to recreate tables.")
+        print("\nFailed to recreate tables.")
         print("Please check your database configuration and try again.") 

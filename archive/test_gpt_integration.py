@@ -25,18 +25,18 @@ def test_gpt_integration():
     # Check if API key is set
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        print("❌ OPENAI_API_KEY not found in environment variables")
+        print("OPENAI_API_KEY not found in environment variables")
         print("Please set your OpenAI API key in the .env file")
         return False
     
-    print(f"✅ API Key found: {api_key[:10]}...")
+    print(f"API Key found: {api_key[:10]}...")
     
     # Initialize the AI engine
     try:
         ai_engine = AIRecommendationEngine()
-        print("✅ AI Recommendation Engine initialized successfully")
+        print("AI Recommendation Engine initialized successfully")
     except Exception as e:
-        print(f"❌ Failed to initialize AI engine: {e}")
+        print(f"Failed to initialize AI engine: {e}")
         print("This might be due to missing API key or network issues")
         return False
     
@@ -49,10 +49,10 @@ def test_gpt_integration():
             meal="Grilled chicken salad",
             exercise="30 minutes walking"
         )
-        print("✅ Basic recommendation generated successfully")
+        print("Basic recommendation generated successfully")
         print(f"Recommendation: {recommendation[:100]}...")
     except Exception as e:
-        print(f"❌ Failed to get basic recommendation: {e}")
+        print(f"Failed to get basic recommendation: {e}")
         return False
     
     # Test meal suggestions
@@ -62,10 +62,10 @@ def test_gpt_integration():
             blood_sugar=120.0,
             preferences="Low carb, vegetarian"
         )
-        print("✅ Meal suggestions generated successfully")
+        print("Meal suggestions generated successfully")
         print(f"Suggestions: {meal_suggestions[:100]}...")
     except Exception as e:
-        print(f"❌ Failed to get meal suggestions: {e}")
+        print(f"Failed to get meal suggestions: {e}")
         return False
     
     # Test exercise recommendations
@@ -75,14 +75,14 @@ def test_gpt_integration():
             blood_sugar=120.0,
             current_exercise="Walking"
         )
-        print("✅ Exercise recommendations generated successfully")
+        print("Exercise recommendations generated successfully")
         print(f"Recommendations: {exercise_recs[:100]}...")
     except Exception as e:
-        print(f"❌ Failed to get exercise recommendations: {e}")
+        print(f"Failed to get exercise recommendations: {e}")
         return False
     
     print("\n" + "=" * 50)
-    print("🎉 All GPT API integration tests passed!")
+    print("All GPT API integration tests passed!")
     return True
 
 

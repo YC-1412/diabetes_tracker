@@ -15,9 +15,9 @@ def check_env_file():
     print("🔍 Checking .env file...")
     
     if not os.path.exists('.env'):
-        print("❌ .env file not found!")
-        print("   Please create it by copying env.example:")
-        print("   cp env.example .env")
+        print(".env file not found!")
+        print("Please create it by copying .env.example:")
+        print("cp .env.example .env")
         return False
     
     load_dotenv()
@@ -30,17 +30,17 @@ def check_env_file():
         if not value:
             missing_vars.append(var)
         else:
-            print(f"   ✓ {var}: {value if var != 'DB_PASSWORD' else '***'}")
+            print(f"{var}: {value if var != 'DB_PASSWORD' else '***'}")
     
     if missing_vars:
-        print(f"   ❌ Missing variables: {', '.join(missing_vars)}")
+        print(f"Missing variables: {', '.join(missing_vars)}")
         return False
     
     return True
 
 def check_network_connectivity(host, port):
     """Check if we can reach the database host and port"""
-    print(f"\n🌐 Checking network connectivity to {host}:{port}...")
+    print(f"\nChecking network connectivity to {host}:{port}...")
     
     try:
         # Try to connect to the host and port
@@ -50,19 +50,19 @@ def check_network_connectivity(host, port):
         sock.close()
         
         if result == 0:
-            print(f"   ✓ Network connection successful")
+            print(f"Network connection successful")
             return True
         else:
-            print(f"   ❌ Network connection failed (error code: {result})")
+            print(f"Network connection failed (error code: {result})")
             return False
             
     except Exception as e:
-        print(f"   ❌ Network connection error: {e}")
+        print(f"Network connection error: {e}")
         return False
 
 def check_psycopg2_connection():
     """Try to connect using psycopg2"""
-    print("\n🐘 Testing psycopg2 connection...")
+    print("\nTesting psycopg2 connection...")
     
     try:
         import psycopg2
@@ -81,22 +81,22 @@ def check_psycopg2_connection():
         conn = psycopg2.connect(conn_string)
         conn.close()
         
-        print("   ✓ psycopg2 connection successful!")
+        print("psycopg2 connection successful!")
         return True
         
     except ImportError:
-        print("   ❌ psycopg2 not installed. Run: pip install psycopg2-binary")
+        print("psycopg2 not installed. Run: pip install psycopg2-binary")
         return False
     except OperationalError as e:
-        print(f"   ❌ psycopg2 connection failed: {e}")
+        print(f"psycopg2 connection failed: {e}")
         return False
     except Exception as e:
-        print(f"   ❌ Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
         return False
 
 def check_sqlalchemy_connection():
     """Try to connect using SQLAlchemy"""
-    print("\n🔧 Testing SQLAlchemy connection...")
+    print("\nTesting SQLAlchemy connection...")
     
     try:
         from sqlalchemy import create_engine, text
@@ -115,22 +115,22 @@ def check_sqlalchemy_connection():
             result = conn.execute(text("SELECT 1"))
             result.fetchone()
         
-        print("   ✓ SQLAlchemy connection successful!")
+        print("SQLAlchemy connection successful!")
         return True
         
     except ImportError as e:
-        print(f"   ❌ SQLAlchemy import error: {e}")
+        print(f"SQLAlchemy import error: {e}")
         return False
     except OperationalError as e:
-        print(f"   ❌ SQLAlchemy connection failed: {e}")
+        print(f"SQLAlchemy connection failed: {e}")
         return False
     except Exception as e:
-        print(f"   ❌ Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
         return False
 
 def run_quick_tests():
     """Run quick connectivity tests"""
-    print("\n⚡ Running quick connectivity tests...")
+    print("\nRunning quick connectivity tests...")
     
     host = os.getenv('DB_HOST')
     port = os.getenv('DB_PORT')
@@ -140,33 +140,33 @@ def run_quick_tests():
         result = subprocess.run(['ping', '-c', '1', host], 
                               capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
-            print(f"   ✓ Ping to {host} successful")
+            print(f"Ping to {host} successful")
         else:
-            print(f"   ❌ Ping to {host} failed")
+            print(f"Ping to {host} failed")
     except Exception as e:
-        print(f"   ⚠️  Ping test failed: {e}")
+        print(f"Ping test failed: {e}")
     
     # Test 2: telnet (if available)
     try:
         result = subprocess.run(['telnet', host, port], 
                               capture_output=True, text=True, timeout=10)
         if "Connected" in result.stdout or result.returncode == 0:
-            print(f"   ✓ Telnet to {host}:{port} successful")
+            print(f"Telnet to {host}:{port} successful")
         else:
-            print(f"   ❌ Telnet to {host}:{port} failed")
+            print(f"Telnet to {host}:{port} failed")
     except FileNotFoundError:
-        print(f"   ⚠️  Telnet not available, skipping test")
+        print(f"Telnet not available, skipping test")
     except Exception as e:
-        print(f"   ⚠️  Telnet test failed: {e}")
+        print(f"Telnet test failed: {e}")
 
 def main():
     """Main diagnostic function"""
-    print("🔍 PostgreSQL Connection Diagnostic Tool")
+    print("PostgreSQL Connection Diagnostic Tool")
     print("=" * 45)
     
     # Step 1: Check environment file
     if not check_env_file():
-        print("\n❌ Please fix .env file issues first")
+        print("\nPlease fix .env file issues first")
         return False
     
     host = os.getenv('DB_HOST')
@@ -174,12 +174,12 @@ def main():
     
     # Step 2: Check network connectivity
     if not check_network_connectivity(host, port):
-        print("\n🔧 Network connectivity issues detected!")
-        print("   Possible solutions:")
-        print("   1. Check AWS Security Group allows port 5432")
-        print("   2. Check if PostgreSQL is running on EC2")
-        print("   3. Check if PostgreSQL is configured for remote connections")
-        print("   4. Check firewall settings on EC2")
+        print("\nNetwork connectivity issues detected!")
+        print("Possible solutions:")
+        print("1. Check AWS Security Group allows port 5432")
+        print("2. Check if PostgreSQL is running on EC2")
+        print("3. Check if PostgreSQL is configured for remote connections")
+        print("4. Check firewall settings on EC2")
         return False
     
     # Step 3: Run quick tests
@@ -195,7 +195,7 @@ def main():
         print("\n🔧 SQLAlchemy connection issues detected!")
         return False
     
-    print("\n🎉 All connection tests passed!")
+    print("\nAll connection tests passed!")
     print("   Your database connection should be working now.")
     return True
 
