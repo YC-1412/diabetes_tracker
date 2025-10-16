@@ -57,7 +57,7 @@ exclude = [
 ]
 
 # Same as Black.
-line-length = 88
+line-length = 120
 indent-width = 4
 
 # Assume Python 3.9+
@@ -86,7 +86,7 @@ select = [
     "TCH",     # flake8-type-checking
     "ARG",     # flake8-unused-arguments
     "ICN",     # flake8-import-conventions
-    "RUF",     # Ruff-specific rules
+    "E501",    # line too long
 ]
 
 ignore = [
