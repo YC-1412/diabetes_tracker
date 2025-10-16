@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 def check_env_file():
     """Check if .env file exists and has required variables"""
-    print("🔍 Checking .env file...")
+    print("Checking .env file...")
     
     if not os.path.exists('.env'):
         print(".env file not found!")
@@ -187,12 +187,12 @@ def main():
     
     # Step 4: Test psycopg2 connection
     if not check_psycopg2_connection():
-        print("\n🔧 psycopg2 connection issues detected!")
+        print("\npsycopg2 connection issues detected!")
         return False
     
     # Step 5: Test SQLAlchemy connection
     if not check_sqlalchemy_connection():
-        print("\n🔧 SQLAlchemy connection issues detected!")
+        print("\nSQLAlchemy connection issues detected!")
         return False
     
     print("\nAll connection tests passed!")

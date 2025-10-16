@@ -11,7 +11,7 @@ from pathlib import Path
 def setup_api_key():
     """Interactive setup for OpenAI API key"""
     
-    print("🔑 OpenAI API Key Setup")
+    print("OpenAI API Key Setup")
     print("=" * 50)
     
     # Check if .env file exists
