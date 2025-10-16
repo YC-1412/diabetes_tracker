@@ -1,4 +1,5 @@
 [![Ruff Lint](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ruff.yml/badge.svg)](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ruff.yml)
+[![CI](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ci.yml)
 
 # Diabetes Tracker - AI-Powered Management Assistant
 
