@@ -417,200 +417,212 @@ class TestFlaskApplication:
     def test_import_flask_app(self):
         """Test that Flask app can be imported"""
         try:
-            from diabetes_tracker.app import app
-            assert app is not None
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                assert app is not None
         except ImportError as e:
             pytest.skip(f"Flask app import failed: {e}")
     
     def test_home_route(self):
         """Test home route returns 200"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                response = client.get("/")
-                assert response.status_code == 200
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                
+                with app.test_client() as client:
+                    response = client.get("/")
+                    assert response.status_code == 200
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_register_route_exists(self):
         """Test register route exists and handles missing data"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                response = client.post("/api/register")
-                # If database is not available, we get 500, but the route exists
-                # This is acceptable for testing purposes
-                assert response.status_code in [400, 500]  # Missing data or DB error
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                
+                with app.test_client() as client:
+                    response = client.post("/api/register")
+                    # If database is not available, we get 500, but the route exists
+                    # This is acceptable for testing purposes
+                    assert response.status_code in [400, 500]  # Missing data or DB error
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_login_route_exists(self):
         """Test login route exists and handles missing data"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                response = client.post("/api/login")
-                # If database is not available, we get 500, but the route exists
-                # This is acceptable for testing purposes
-                assert response.status_code in [400, 500]  # Missing data or DB error
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                
+                with app.test_client() as client:
+                    response = client.post("/api/login")
+                    # If database is not available, we get 500, but the route exists
+                    # This is acceptable for testing purposes
+                    assert response.status_code in [400, 500]  # Missing data or DB error
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_log_entry_route_exists(self):
         """Test log entry route exists and handles missing data"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                response = client.post("/api/log-entry")
-                # If database is not available, we get 500, but the route exists
-                # This is acceptable for testing purposes
-                assert response.status_code in [400, 500]  # Missing data or DB error
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                
+                with app.test_client() as client:
+                    response = client.post("/api/log-entry")
+                    # If database is not available, we get 500, but the route exists
+                    # This is acceptable for testing purposes
+                    assert response.status_code in [400, 500]  # Missing data or DB error
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_history_route_exists(self):
         """Test history route exists"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                response = client.get("/api/history/testuser")
-                # Should return 200 even if user doesn't exist (empty history)
-                assert response.status_code in [200, 400]
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                
+                with app.test_client() as client:
+                    response = client.get("/api/history/testuser")
+                    # Should return 200 even if user doesn't exist (empty history)
+                    assert response.status_code in [200, 400]
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_chart_data_route_exists(self):
         """Test chart data route exists"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                response = client.get("/api/chart-data/testuser")
-                # Should return 200 even if user doesn't exist (empty chart data)
-                assert response.status_code in [200, 400]
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                
+                with app.test_client() as client:
+                    response = client.get("/api/chart-data/testuser")
+                    # Should return 200 even if user doesn't exist (empty chart data)
+                    assert response.status_code in [200, 400]
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_change_password_route_exists(self):
         """Test change password route exists"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                response = client.post("/api/change-password", json={
-                    "username": "testuser",
-                    "old_password": "oldpass",
-                    "new_password": "newpass"
-                })
-                # Should return 401 for invalid credentials or 400 for missing data
-                assert response.status_code in [200, 400, 401]
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                
+                with app.test_client() as client:
+                    response = client.post("/api/change-password", json={
+                        "username": "testuser",
+                        "old_password": "oldpass",
+                        "new_password": "newpass"
+                    })
+                    # Should return 401 for invalid credentials or 400 for missing data
+                    assert response.status_code in [200, 400, 401]
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_change_password_success(self):
         """Test successful password change via API"""
         try:
-            from diabetes_tracker.app import app
-            
-            with patch('diabetes_tracker.app.auth_manager') as mock_auth_manager:
-                # Mock successful password change
-                mock_auth_manager.change_password.return_value = True
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
                 
-                with app.test_client() as client:
-                    change_response = client.post("/api/change-password", json={
-                        "username": "apiuser",
-                        "old_password": "oldpass123",
-                        "new_password": "newpass456"
-                    })
+                with patch('diabetes_tracker.app.auth_manager') as mock_auth_manager:
+                    # Mock successful password change
+                    mock_auth_manager.change_password.return_value = True
                     
-                    assert change_response.status_code == 200
-                    data = change_response.get_json()
-                    assert "message" in data
-                    assert "successfully" in data["message"].lower()
-                    
-                    # Verify auth_manager.change_password was called correctly
-                    mock_auth_manager.change_password.assert_called_once_with(
-                        "apiuser", "oldpass123", "newpass456"
-                    )
+                    with app.test_client() as client:
+                        change_response = client.post("/api/change-password", json={
+                            "username": "apiuser",
+                            "old_password": "oldpass123",
+                            "new_password": "newpass456"
+                        })
+                        
+                        assert change_response.status_code == 200
+                        data = change_response.get_json()
+                        assert "message" in data
+                        assert "successfully" in data["message"].lower()
+                        
+                        # Verify auth_manager.change_password was called correctly
+                        mock_auth_manager.change_password.assert_called_once_with(
+                            "apiuser", "oldpass123", "newpass456"
+                        )
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_change_password_invalid_old_password(self):
         """Test password change with invalid old password via API"""
         try:
-            from diabetes_tracker.app import app
-            
-            with patch('diabetes_tracker.app.auth_manager') as mock_auth_manager:
-                # Mock failed password change
-                mock_auth_manager.change_password.return_value = False
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
                 
-                with app.test_client() as client:
-                    change_response = client.post("/api/change-password", json={
-                        "username": "apiuser2",
-                        "old_password": "wrongpass",
-                        "new_password": "newpass456"
-                    })
+                with patch('diabetes_tracker.app.auth_manager') as mock_auth_manager:
+                    # Mock failed password change
+                    mock_auth_manager.change_password.return_value = False
                     
-                    assert change_response.status_code == 401
-                    data = change_response.get_json()
-                    assert "error" in data
-                    
-                    # Verify auth_manager.change_password was called correctly
-                    mock_auth_manager.change_password.assert_called_once_with(
-                        "apiuser2", "wrongpass", "newpass456"
-                    )
+                    with app.test_client() as client:
+                        change_response = client.post("/api/change-password", json={
+                            "username": "apiuser2",
+                            "old_password": "wrongpass",
+                            "new_password": "newpass456"
+                        })
+                        
+                        assert change_response.status_code == 401
+                        data = change_response.get_json()
+                        assert "error" in data
+                        
+                        # Verify auth_manager.change_password was called correctly
+                        mock_auth_manager.change_password.assert_called_once_with(
+                            "apiuser2", "wrongpass", "newpass456"
+                        )
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_change_password_missing_fields(self):
         """Test password change with missing fields via API"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                # Test missing username
-                response = client.post("/api/change-password", json={
-                    "old_password": "oldpass",
-                    "new_password": "newpass"
-                })
-                assert response.status_code == 400
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
                 
-                # Test missing old password
-                response = client.post("/api/change-password", json={
-                    "username": "testuser",
-                    "new_password": "newpass"
-                })
-                assert response.status_code == 400
-                
-                # Test missing new password
-                response = client.post("/api/change-password", json={
-                    "username": "testuser",
-                    "old_password": "oldpass"
-                })
-                assert response.status_code == 400
+                with app.test_client() as client:
+                    # Test missing username
+                    response = client.post("/api/change-password", json={
+                        "old_password": "oldpass",
+                        "new_password": "newpass"
+                    })
+                    assert response.status_code == 400
+                    
+                    # Test missing old password
+                    response = client.post("/api/change-password", json={
+                        "username": "testuser",
+                        "new_password": "newpass"
+                    })
+                    assert response.status_code == 400
+                    
+                    # Test missing new password
+                    response = client.post("/api/change-password", json={
+                        "username": "testuser",
+                        "old_password": "oldpass"
+                    })
+                    assert response.status_code == 400
         except ImportError:
             pytest.skip("Flask app not available")
     
     def test_change_password_short_password(self):
         """Test password change with too short new password via API"""
         try:
-            from diabetes_tracker.app import app
-            
-            with app.test_client() as client:
-                response = client.post("/api/change-password", json={
-                    "username": "testuser",
-                    "old_password": "oldpass",
-                    "new_password": "123"  # Too short
-                })
-                assert response.status_code == 400
-                data = response.get_json()
-                assert "error" in data
-                assert "6 characters" in data["error"]
+            with patch('diabetes_tracker.modules.database.create_engine'):
+                from diabetes_tracker.app import app
+                
+                with app.test_client() as client:
+                    response = client.post("/api/change-password", json={
+                        "username": "testuser",
+                        "old_password": "oldpass",
+                        "new_password": "123"  # Too short
+                    })
+                    assert response.status_code == 400
+                    data = response.get_json()
+                    assert "error" in data
+                    assert "6 characters" in data["error"]
         except ImportError:
             pytest.skip("Flask app not available")
 

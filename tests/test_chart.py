@@ -6,7 +6,7 @@ Pytest tests for chart functionality
 import pytest
 import requests
 import time
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 
 @pytest.fixture
@@ -321,10 +321,9 @@ class TestChartWithMockData:
     def test_chart_api_with_mock_data(self, mock_get, sample_chart_data):
         """Test chart API with mock response data"""
         # Mock the API response
-        mock_response = type('MockResponse', (), {
-            'status_code': 200,
-            'json': lambda: sample_chart_data
-        })()
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = sample_chart_data
         mock_get.return_value = mock_response
         
         # Test the mock response
@@ -340,10 +339,9 @@ class TestChartWithMockData:
     def test_chart_api_error_handling(self, mock_get):
         """Test chart API error handling with mock"""
         # Mock an error response
-        mock_response = type('MockResponse', (), {
-            'status_code': 500,
-            'json': lambda: {"error": "Internal server error"}
-        })()
+        mock_response = Mock()
+        mock_response.status_code = 500
+        mock_response.json.return_value = {"error": "Internal server error"}
         mock_get.return_value = mock_response
         
         # Test the error response
