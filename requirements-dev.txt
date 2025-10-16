@@ -1,5 +1,5 @@
 # Development dependencies
-flake8==6.1.0
+ruff==0.1.6
 pytest==7.4.3
 pytest-cov==4.1.0
 pytest-html==4.1.1
@@ -9,8 +9,6 @@ pytest-mock==3.12.0
 pytest-requests==2.0.0
 bandit==1.7.5
 safety==2.3.5
-black==23.11.0
-isort==5.12.0
 
 # Production dependencies (from requirements.txt)
 Flask==2.3.3
