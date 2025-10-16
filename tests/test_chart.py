@@ -100,15 +100,17 @@ class TestChartAPI:
                     dates = chart_data["dates"]
                     assert dates == sorted(dates), "Dates should be sorted chronologically"
                     
-                    # Check that labels are formatted as MM/DD
+                    # Check that labels are formatted as MM/DD HH:MM
                     for label in chart_data["labels"]:
-                        assert len(label) == 5, "Labels should be MM/DD format"
+                        assert len(label) >= 8, "Labels should be MM/DD HH:MM format"
                         assert label[2] == "/", "Labels should have / separator"
+                        assert " " in label, "Labels should have space between date and time"
                     
-                    # Check that dates are formatted as YYYY-MM-DD
+                    # Check that dates are formatted as YYYY-MM-DD HH:MM:SS
                     for date in chart_data["dates"]:
-                        assert len(date) == 10, "Dates should be YYYY-MM-DD format"
+                        assert len(date) >= 19, "Dates should be YYYY-MM-DD HH:MM:SS format"
                         assert date[4] == "-" and date[7] == "-", "Dates should have - separators"
+                        assert " " in date, "Dates should have space between date and time"
                     
                     # Check that blood sugar values are numeric
                     for value in chart_data["data"]:
