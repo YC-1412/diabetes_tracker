@@ -23,13 +23,14 @@ diabetes_tracker/
 ├── pyproject.toml        # Modern Python project configuration
 ├── Makefile              # Development commands
 ├── .flake8               # Flake8 configuration
-├── .env.example          # Environment variables template
+├── .env.example           # Environment variables template
 ├── .github/workflows/    # GitHub Actions CI/CD
 │   └── ci.yml           # Continuous integration workflow
 ├── src/                  # Source code package
 │   └── diabetes_tracker/ # Main application package
 │       ├── __init__.py   # Package initialization
 │       ├── app.py        # Main Flask application
+│       ├── init_db.py    # Database initialization script
 │       ├── modules/      # Backend modules
 │       │   ├── __init__.py
 │       │   ├── auth.py           # Authentication management
@@ -42,9 +43,17 @@ diabetes_tracker/
 │           │   └── style.css     # Application styling
 │           └── js/
 │               └── app.js        # Frontend JavaScript
-└── data/                 # CSV data storage (created automatically)
-    ├── users.csv         # User accounts
-    └── diabetes_entries.csv # Diabetes data entries
+├── tests/              # Test suite
+│   ├── __init__.py
+│   ├── run_tests.py      # Run all tests
+│   ├── test_app.py       # Application tests
+│   └── test_chart.py     # Chart tests
+└── archive/           # Legacy and utility scripts
+    ├── migrate_csv_to_db.py
+    ├── test_db_connection.py
+    └── diagnose_db_connection.py
+
+
 ```
 
 ## Installation
@@ -53,6 +62,7 @@ diabetes_tracker/
 
 - Python 3.9 or higher
 - pip (Python package installer)
+- PostgreSQL database (local or remote)
 
 ### Setup Instructions
 
@@ -85,13 +95,31 @@ diabetes_tracker/
 4. **Set up environment variables**
    ```bash
    # Copy the example file
-   cp .env.example .env
+   cp env.example .env
    
-   # Edit .env file and add your OpenAI API key
-   # Get your API key from: https://platform.openai.com/api-keys
+   # Edit .env file and add your database configuration
+   # Update the following variables:
+   # - DB_HOST: Your PostgreSQL host (e.g., your EC2 instance IP)
+   # - DB_PORT: PostgreSQL port (default: 5432)
+   # - DB_NAME: Database name (default: diabetes_tracker)
+   # - DB_USER: Database username (default: postgres)
+   # - DB_PASSWORD: Database password
+   # - OPENAI_API_KEY: Your OpenAI API key (optional)
    ```
 
-5. **Run the application**
+5. **Set up the database**
+   ```bash
+   # Initialize the database (creates tables)
+   make init-db
+   
+   # If you have existing CSV data, migrate it to PostgreSQL
+   make migrate-csv
+   
+   # Or run the complete setup (init + migrate if CSV exists)
+   make setup-db
+   ```
+
+6. **Run the application**
    ```bash
    python main.py
    ```
@@ -132,6 +160,12 @@ make ci
 
 # Clean up generated files
 make clean
+
+# Database commands
+make init-db          # Initialize PostgreSQL database
+make migrate-csv      # Migrate CSV data to PostgreSQL
+make check-db         # Check database connection
+make setup-db         # Complete database setup
 ```
 
 ### Code Quality
@@ -174,9 +208,63 @@ The project includes GitHub Actions workflows that run on every push and pull re
 
 Create a `.env` file in the project root with the following variables:
 
+#### Database Configuration
+- `DB_HOST`: PostgreSQL host (e.g., your EC2 instance IP or localhost)
+- `DB_PORT`: PostgreSQL port (default: 5432)
+- `DB_NAME`: Database name (default: diabetes_tracker)
+- `DB_USER`: Database username (default: postgres)
+- `DB_PASSWORD`: Database password
+
+#### Application Configuration
 - `OPENAI_API_KEY`: Your OpenAI API key (required for AI recommendations)
 - `FLASK_ENV`: Set to `development` or `production`
 - `FLASK_DEBUG`: Set to `True` for development, `False` for production
+
+### Database Setup
+
+#### Local PostgreSQL Setup
+1. Install PostgreSQL on your system
+2. Create a database:
+   ```sql
+   CREATE DATABASE diabetes_tracker;
+   ```
+3. Update your `.env` file with local database credentials
+
+#### AWS EC2 PostgreSQL Setup
+1. Connect to your EC2 instance
+2. Install PostgreSQL:
+   ```bash
+   sudo apt update
+   sudo apt install postgresql postgresql-contrib
+   ```
+3. Start PostgreSQL service:
+   ```bash
+   sudo systemctl start postgresql
+   sudo systemctl enable postgresql
+   ```
+4. Configure PostgreSQL for remote connections:
+   ```bash
+   sudo -u postgres psql
+   ```
+   ```sql
+   ALTER USER postgres PASSWORD 'your-secure-password';
+   CREATE DATABASE diabetes_tracker;
+   \q
+   ```
+5. Edit PostgreSQL configuration:
+   ```bash
+   sudo nano /etc/postgresql/*/main/postgresql.conf
+   # Change: listen_addresses = '*'
+   
+   sudo nano /etc/postgresql/*/main/pg_hba.conf
+   # Add: host all all 0.0.0.0/0 md5
+   ```
+6. Restart PostgreSQL:
+   ```bash
+   sudo systemctl restart postgresql
+   ```
+7. Configure your EC2 security group to allow connections on port 5432
+8. Update your `.env` file with EC2 database credentials
 
 ### OpenAI API Setup
 
