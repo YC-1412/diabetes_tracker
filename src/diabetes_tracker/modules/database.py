@@ -77,10 +77,16 @@ class DataManager:
             logger.info("Falling back to in-memory storage for user preferences")
             self.db_available = False
 
-    def get_db_session(self) -> Session:
-        """Get a database session"""
+    def get_db_session(self):
+        """Get a database session context manager"""
         if not self.db_available:
-            raise SQLAlchemyError("Database not available")
+            # Return a context manager that raises SQLAlchemyError when used
+            class MockSession:
+                def __enter__(self):
+                    raise SQLAlchemyError("Database not available")
+                def __exit__(self, exc_type, exc_val, exc_tb):
+                    pass
+            return MockSession()
         return self.SessionLocal()
 
     def get_user_preferred_units(self, username: str) -> str:

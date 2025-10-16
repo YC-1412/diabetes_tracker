@@ -480,7 +480,9 @@ class TestFlaskApplication:
     def test_history_route_exists(self):
         """Test history route exists"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
@@ -493,7 +495,9 @@ class TestFlaskApplication:
     def test_chart_data_route_exists(self):
         """Test chart data route exists"""
         try:
-            with patch('diabetes_tracker.modules.database.create_engine'):
+            with patch('diabetes_tracker.modules.database.create_engine') as mock_create_engine:
+                # Make the mock raise an exception to simulate database unavailability
+                mock_create_engine.side_effect = Exception("Database not available")
                 from diabetes_tracker.app import app
                 
                 with app.test_client() as client:
