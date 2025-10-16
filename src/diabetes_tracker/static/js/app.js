@@ -15,6 +15,13 @@ const notification = document.getElementById('notification');
 const notificationMessage = document.getElementById('notification-message');
 const notificationClose = document.getElementById('notification-close');
 
+// Password change elements
+const changePasswordBtn = document.getElementById('change-password-btn');
+const passwordChangeModal = document.getElementById('password-change-modal');
+const passwordChangeForm = document.getElementById('password-change-form');
+const closePasswordModal = document.getElementById('close-password-modal');
+const cancelPasswordChange = document.getElementById('cancel-password-change');
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
@@ -42,6 +49,12 @@ function setupEventListeners() {
     logoutBtn.addEventListener('submit', handleLogout);
     logoutBtn.addEventListener('click', handleLogout);
     refreshRecommendationBtn.addEventListener('click', loadRecommendation);
+    
+    // Password change functionality
+    changePasswordBtn.addEventListener('click', showPasswordChangeModal);
+    passwordChangeForm.addEventListener('submit', handlePasswordChange);
+    closePasswordModal.addEventListener('click', hidePasswordChangeModal);
+    cancelPasswordChange.addEventListener('click', hidePasswordChangeModal);
     
     // AI buttons
     document.getElementById('get-meal-suggestions').addEventListener('click', getMealSuggestions);
@@ -637,4 +650,75 @@ window.addEventListener('offline', function() {
 
 window.addEventListener('online', function() {
     showNotification('You are back online!', 'success');
-}); 
+});
+
+// Password change functions
+function showPasswordChangeModal() {
+    passwordChangeModal.classList.remove('hidden');
+    // Clear form
+    passwordChangeForm.reset();
+}
+
+function hidePasswordChangeModal() {
+    passwordChangeModal.classList.add('hidden');
+    // Clear form
+    passwordChangeForm.reset();
+}
+
+async function handlePasswordChange(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(passwordChangeForm);
+    const oldPassword = formData.get('old_password');
+    const newPassword = formData.get('new_password');
+    const confirmNewPassword = formData.get('confirm_new_password');
+    
+    // Validate passwords match
+    if (newPassword !== confirmNewPassword) {
+        showNotification('New passwords do not match', 'error');
+        hideLoading();
+        return;
+    }
+    
+    // Validate password length
+    if (newPassword.length < 6) {
+        showNotification('New password must be at least 6 characters long', 'error');
+        hideLoading();
+        return;
+    }
+    
+    // Validate old password is not the same as new password
+    if (oldPassword === newPassword) {
+        showNotification('New password must be different from current password', 'error');
+        hideLoading();
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: currentUser.username,
+                old_password: oldPassword,
+                new_password: newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showNotification('Password changed successfully!', 'success');
+            hidePasswordChangeModal();
+        } else {
+            showNotification(data.error || 'Failed to change password', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error. Please try again.', 'error');
+    } finally {
+        hideLoading();
+    }
+} 

@@ -8,6 +8,8 @@ import sys
 import tempfile
 import shutil
 import pytest
+from datetime import datetime
+from unittest.mock import Mock, patch, MagicMock
 
 # Add the src directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
@@ -30,31 +32,30 @@ def temp_data_dir():
 
 
 @pytest.fixture
-def auth_manager(temp_data_dir):
-    """Create AuthManager instance with temporary data directory"""
-    # Temporarily change data directory for testing
-    original_data_dir = AuthManager.data_dir
-    AuthManager.data_dir = temp_data_dir
-    
-    manager = AuthManager()
-    yield manager
-    
-    # Restore original data directory
-    AuthManager.data_dir = original_data_dir
+def mock_data_manager():
+    """Create a mock DataManager for testing"""
+    mock_dm = Mock(spec=DataManager)
+    mock_session = Mock()
+    mock_dm.get_db_session.return_value.__enter__ = Mock(return_value=mock_session)
+    mock_dm.get_db_session.return_value.__exit__ = Mock(return_value=None)
+    return mock_dm
 
 
 @pytest.fixture
-def data_manager(temp_data_dir):
-    """Create DataManager instance with temporary data directory"""
-    # Temporarily change data directory for testing
-    original_data_dir = DataManager.data_dir
-    DataManager.data_dir = temp_data_dir
-    
-    manager = DataManager()
+def auth_manager(mock_data_manager):
+    """Create AuthManager instance with mocked data manager"""
+    manager = AuthManager(mock_data_manager)
     yield manager
-    
-    # Restore original data directory
-    DataManager.data_dir = original_data_dir
+
+
+@pytest.fixture
+def data_manager():
+    """Create a mock DataManager instance"""
+    mock_dm = Mock(spec=DataManager)
+    mock_session = Mock()
+    mock_dm.get_db_session.return_value.__enter__ = Mock(return_value=mock_session)
+    mock_dm.get_db_session.return_value.__exit__ = Mock(return_value=None)
+    return mock_dm
 
 
 @pytest.fixture
@@ -117,6 +118,73 @@ class TestAuthentication:
         # Should be SHA-256 hash (64 characters)
         assert len(stored_hash) == 64
         assert stored_hash != "testpass123"
+    
+    def test_change_password_success(self, auth_manager):
+        """Test successful password change"""
+        # Mock the login_user method to return True for old password
+        auth_manager.login_user = Mock(return_value=True)
+        
+        # Mock the database session and user query
+        mock_session = auth_manager.data_manager.get_db_session.return_value.__enter__.return_value
+        mock_user = Mock()
+        mock_user.password_hash = "old_hash"
+        mock_session.query.return_value.filter.return_value.first.return_value = mock_user
+        
+        # Test password change
+        success = auth_manager.change_password("testuser", "oldpass123", "newpass456")
+        assert success is True
+        
+        # Verify login_user was called to verify old password
+        auth_manager.login_user.assert_called_once_with("testuser", "oldpass123")
+        
+        # Verify password hash was updated
+        assert mock_user.password_hash != "old_hash"
+        mock_session.commit.assert_called_once()
+    
+    def test_change_password_invalid_old_password(self, auth_manager):
+        """Test password change with invalid old password"""
+        # Mock the login_user method to return False for wrong password
+        auth_manager.login_user = Mock(return_value=False)
+        
+        # Test password change with wrong old password
+        success = auth_manager.change_password("testuser", "wrongpass", "newpass456")
+        assert success is False
+        
+        # Verify login_user was called to verify old password
+        auth_manager.login_user.assert_called_once_with("testuser", "wrongpass")
+    
+    def test_change_password_nonexistent_user(self, auth_manager):
+        """Test password change for nonexistent user"""
+        # Mock the login_user method to return False
+        auth_manager.login_user = Mock(return_value=False)
+        
+        success = auth_manager.change_password("nonexistent", "oldpass", "newpass")
+        assert success is False
+        
+        # Verify login_user was called
+        auth_manager.login_user.assert_called_once_with("nonexistent", "oldpass")
+    
+    def test_change_password_same_password(self, auth_manager):
+        """Test password change with same old and new password"""
+        # Mock the login_user method to return True
+        auth_manager.login_user = Mock(return_value=True)
+        
+        # Mock the database session and user query
+        mock_session = auth_manager.data_manager.get_db_session.return_value.__enter__.return_value
+        mock_user = Mock()
+        mock_user.password_hash = "old_hash"
+        mock_session.query.return_value.filter.return_value.first.return_value = mock_user
+        
+        # Test password change with same password
+        success = auth_manager.change_password("testuser", "samepass123", "samepass123")
+        assert success is True
+        
+        # Verify login_user was called
+        auth_manager.login_user.assert_called_once_with("testuser", "samepass123")
+        
+        # Verify password hash was updated (even if same password)
+        assert mock_user.password_hash != "old_hash"
+        mock_session.commit.assert_called_once()
 
 
 class TestDataManagement:
@@ -342,6 +410,124 @@ class TestFlaskApplication:
                 response = client.get("/api/chart-data/testuser")
                 # Should return 200 even if user doesn't exist (empty chart data)
                 assert response.status_code in [200, 400]
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_change_password_route_exists(self):
+        """Test change password route exists"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                response = client.post("/api/change-password", json={
+                    "username": "testuser",
+                    "old_password": "oldpass",
+                    "new_password": "newpass"
+                })
+                # Should return 401 for invalid credentials or 400 for missing data
+                assert response.status_code in [200, 400, 401]
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_change_password_success(self):
+        """Test successful password change via API"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with patch('diabetes_tracker.app.auth_manager') as mock_auth_manager:
+                # Mock successful password change
+                mock_auth_manager.change_password.return_value = True
+                
+                with app.test_client() as client:
+                    change_response = client.post("/api/change-password", json={
+                        "username": "apiuser",
+                        "old_password": "oldpass123",
+                        "new_password": "newpass456"
+                    })
+                    
+                    assert change_response.status_code == 200
+                    data = change_response.get_json()
+                    assert "message" in data
+                    assert "successfully" in data["message"].lower()
+                    
+                    # Verify auth_manager.change_password was called correctly
+                    mock_auth_manager.change_password.assert_called_once_with(
+                        "apiuser", "oldpass123", "newpass456"
+                    )
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_change_password_invalid_old_password(self):
+        """Test password change with invalid old password via API"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with patch('diabetes_tracker.app.auth_manager') as mock_auth_manager:
+                # Mock failed password change
+                mock_auth_manager.change_password.return_value = False
+                
+                with app.test_client() as client:
+                    change_response = client.post("/api/change-password", json={
+                        "username": "apiuser2",
+                        "old_password": "wrongpass",
+                        "new_password": "newpass456"
+                    })
+                    
+                    assert change_response.status_code == 401
+                    data = change_response.get_json()
+                    assert "error" in data
+                    
+                    # Verify auth_manager.change_password was called correctly
+                    mock_auth_manager.change_password.assert_called_once_with(
+                        "apiuser2", "wrongpass", "newpass456"
+                    )
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_change_password_missing_fields(self):
+        """Test password change with missing fields via API"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                # Test missing username
+                response = client.post("/api/change-password", json={
+                    "old_password": "oldpass",
+                    "new_password": "newpass"
+                })
+                assert response.status_code == 400
+                
+                # Test missing old password
+                response = client.post("/api/change-password", json={
+                    "username": "testuser",
+                    "new_password": "newpass"
+                })
+                assert response.status_code == 400
+                
+                # Test missing new password
+                response = client.post("/api/change-password", json={
+                    "username": "testuser",
+                    "old_password": "oldpass"
+                })
+                assert response.status_code == 400
+        except ImportError:
+            pytest.skip("Flask app not available")
+    
+    def test_change_password_short_password(self):
+        """Test password change with too short new password via API"""
+        try:
+            from diabetes_tracker.app import app
+            
+            with app.test_client() as client:
+                response = client.post("/api/change-password", json={
+                    "username": "testuser",
+                    "old_password": "oldpass",
+                    "new_password": "123"  # Too short
+                })
+                assert response.status_code == 400
+                data = response.get_json()
+                assert "error" in data
+                assert "6 characters" in data["error"]
         except ImportError:
             pytest.skip("Flask app not available")
 
