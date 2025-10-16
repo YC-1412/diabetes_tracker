@@ -18,7 +18,7 @@ def run_command(command, description):
     print(f"{'='*60}")
     
     try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=False)
+        _ = subprocess.run(command, shell=True, check=True, capture_output=False)
         print(f"\n{description} completed successfully!")
         return True
     except subprocess.CalledProcessError as e:

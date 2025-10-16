@@ -2,6 +2,8 @@ import os
 from openai import OpenAI
 
 
+GPT_ERROR_MESSAGE = "GPT API is not available. Here is a basic recommendation:\n"
+
 class AIRecommendationEngine:
     """Handles AI-powered recommendations using OpenAI GPT"""
 
@@ -24,14 +26,14 @@ class AIRecommendationEngine:
 
         # If no API key, return a basic recommendation
         if not self.api_key:
-            return self._get_basic_recommendation(blood_sugar, meal, exercise)
+            return GPT_ERROR_MESSAGE + self._get_basic_recommendation(blood_sugar)
 
         try:
             # Create context for the AI
             context = self._create_context(username, blood_sugar, meal, exercise)
 
             # Call OpenAI API
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {
@@ -52,7 +54,7 @@ class AIRecommendationEngine:
 
         except Exception as e:
             print(f"Error calling OpenAI API: {e}")
-            return self._get_basic_recommendation(blood_sugar, meal, exercise)
+            return GPT_ERROR_MESSAGE + self._get_basic_recommendation(blood_sugar)
 
     def _create_context(
         self, username: str, blood_sugar: float, meal: str, exercise: str
@@ -60,7 +62,7 @@ class AIRecommendationEngine:
         """Create context string for AI recommendation"""
 
         # Analyze blood sugar level
-        # blood_sugar_status = self._analyze_blood_sugar(blood_sugar)
+        blood_sugar_status = self._analyze_blood_sugar(blood_sugar)
 
         context = f"""
         User: {username}
@@ -106,11 +108,11 @@ class AIRecommendationEngine:
         return ' '.join(truncated_words) + '...'
 
     def _get_basic_recommendation(
-        self, blood_sugar: float, meal: str, exercise: str
+        self, blood_sugar: float
     ) -> str:
         """Provide basic recommendation when AI is not available"""
 
-        status = self._analyze_blood_sugar(blood_sugar)
+        # status = self._analyze_blood_sugar(blood_sugar)
 
         if blood_sugar < 70:
             return f"Your blood sugar is low ({blood_sugar} mg/dL). Consider having a small snack with carbohydrates and protein. Monitor your levels closely and consult your healthcare provider if this happens frequently."
@@ -125,7 +127,7 @@ class AIRecommendationEngine:
         """Get meal suggestions based on blood sugar level"""
 
         if not self.api_key:
-            return self._get_basic_meal_suggestions(blood_sugar)
+            return GPT_ERROR_MESSAGE + self._get_basic_meal_suggestions(blood_sugar)
 
         try:
             context = f"""
@@ -139,7 +141,7 @@ class AIRecommendationEngine:
             IMPORTANT: Limit your response to 200 words maximum.
             """
 
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {
@@ -156,7 +158,7 @@ class AIRecommendationEngine:
 
         except Exception as e:
             print(f"Error getting meal suggestions: {e}")
-            return self._get_basic_meal_suggestions(blood_sugar)
+            return GPT_ERROR_MESSAGE + self._get_basic_meal_suggestions(blood_sugar)
 
     def _get_basic_meal_suggestions(self, blood_sugar: float) -> str:
         """Basic meal suggestions when AI is not available"""
@@ -195,8 +197,8 @@ class AIRecommendationEngine:
         """Get exercise recommendations based on blood sugar level"""
 
         if not self.api_key:
-            return self._get_basic_exercise_recommendations(
-                blood_sugar, current_exercise
+            return GPT_ERROR_MESSAGE + self._get_basic_exercise_recommendations(
+                blood_sugar
             )
 
         try:
@@ -210,7 +212,7 @@ class AIRecommendationEngine:
             IMPORTANT: Limit your response to 200 words maximum.
             """
 
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {
@@ -228,11 +230,11 @@ class AIRecommendationEngine:
         except Exception as e:
             print(f"Error getting exercise recommendations: {e}")
             return self._get_basic_exercise_recommendations(
-                blood_sugar, current_exercise
+                blood_sugar
             )
 
     def _get_basic_exercise_recommendations(
-        self, blood_sugar: float, current_exercise: str
+        self, blood_sugar: float
     ) -> str:
         """Basic exercise recommendations when AI is not available"""
 

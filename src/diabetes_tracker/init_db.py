@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 # Add the parent directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from diabetes_tracker.modules.database import DataManager
-from diabetes_tracker.modules.auth import AuthManager
+# from diabetes_tracker.modules.database import DataManager
+# from diabetes_tracker.modules.auth import AuthManager
 import logging
 
 # Configure logging
