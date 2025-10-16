@@ -199,5 +199,31 @@ def get_exercise_recommendations():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/change-password', methods=['POST'])
+def change_password():
+    """Change user password"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        old_password = data.get('old_password')
+        new_password = data.get('new_password')
+
+        if not all([username, old_password, new_password]):
+            return jsonify({'error': 'Username, old password, and new password are required'}), 400
+
+        # Validate new password length
+        if len(new_password) < 6:
+            return jsonify({'error': 'New password must be at least 6 characters long'}), 400
+
+        success = auth_manager.change_password(username, old_password, new_password)
+        if success:
+            return jsonify({'message': 'Password changed successfully'}), 200
+        else:
+            return jsonify({'error': 'Invalid old password or user not found'}), 401
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5001)
