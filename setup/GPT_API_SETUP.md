@@ -13,7 +13,7 @@ This guide will help you set up OpenAI's GPT API for the AI-powered recommendati
 
 1. **Visit OpenAI Platform**: Go to https://platform.openai.com/
 2. **Sign in or Create Account**: Use your existing account or create a new one
-3. **Navigate to API Keys**: Click on your profile → "API Keys"
+3. **Navigate to API Keys**: Click on your profile -> "API Keys"
 4. **Create New Key**: Click "Create new secret key"
 5. **Copy the Key**: Save the API key securely (you won't be able to see it again)
 
@@ -65,23 +65,23 @@ You should see output like:
 ```
 Testing GPT API Integration...
 ==================================================
-✅ API Key found: sk-12345678...
-✅ AI Recommendation Engine initialized successfully
+API Key found: sk-12345678...
+AI Recommendation Engine initialized successfully
 
 Testing basic recommendation...
-✅ Basic recommendation generated successfully
+Basic recommendation generated successfully
 Recommendation: Your blood sugar level of 120 mg/dL looks good! Keep up with your current routine...
 
 Testing meal suggestions...
-✅ Meal suggestions generated successfully
+Meal suggestions generated successfully
 Suggestions: Here are some meal suggestions for your blood sugar level...
 
 Testing exercise recommendations...
-✅ Exercise recommendations generated successfully
+Exercise recommendations generated successfully
 Recommendations: Great time for exercise! Your blood sugar of 120 mg/dL is in a safe range...
 
 ==================================================
-🎉 All GPT API integration tests passed!
+All GPT API integration tests passed!
 ```
 
 ## Step 5: Use the AI Features

@@ -50,7 +50,7 @@ def setup_api_key():
     print("\nTo get your OpenAI API key:")
     print("1. Go to https://platform.openai.com/")
     print("2. Sign in or create an account")
-    print("3. Click on your profile → 'API Keys'")
+    print("3. Click on your profile -> 'API Keys'")
     print("4. Click 'Create new secret key'")
     print("5. Copy the key (it starts with 'sk-')")
     print("\n" + "=" * 50)

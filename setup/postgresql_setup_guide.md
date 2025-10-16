@@ -70,7 +70,7 @@ sudo systemctl restart postgresql
 
 ## Step 5: Configure AWS Security Group
 
-1. Go to AWS Console → EC2 → Security Groups
+1. Go to AWS Console -> EC2 -> Security Groups
 2. Find your EC2 instance's security group
 3. Add inbound rule:
    - Type: PostgreSQL
