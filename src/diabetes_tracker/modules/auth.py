@@ -1,29 +1,32 @@
-import pandas as pd
 import os
 import hashlib
 from datetime import datetime
 from typing import Optional
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class AuthManager:
-    """Manages user authentication using CSV file storage"""
+    """Manages user authentication using PostgreSQL database"""
 
-    def __init__(self):
-        self.data_dir = "data"
-        self.users_file = os.path.join(self.data_dir, "users.csv")
-        self._ensure_data_directory()
-        self._initialize_users_file()
+    def __init__(self, data_manager=None):
+        # Use the provided data manager or create a new one
+        if data_manager:
+            self.data_manager = data_manager
+        else:
+            from .database import DataManager
+            self.data_manager = DataManager()
+        
+        logger.info("AuthManager initialized successfully")
 
-    def _ensure_data_directory(self):
-        """Create data directory if it doesn't exist"""
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
-
-    def _initialize_users_file(self):
-        """Initialize users CSV file with headers if it doesn't exist"""
-        if not os.path.exists(self.users_file):
-            users_df = pd.DataFrame(columns=["username", "password_hash", "created_at"])
-            users_df.to_csv(self.users_file, index=False)
+    def get_db_session(self) -> Session:
+        """Get a database session"""
+        return self.data_manager.get_db_session()
 
     def _hash_password(self, password: str) -> str:
         """Hash a password using SHA-256"""
@@ -36,83 +39,97 @@ class AuthManager:
             if self.user_exists(username):
                 return False
 
-            # Read existing users
-            try:
-                df = pd.read_csv(self.users_file)
-            except FileNotFoundError:
-                df = pd.DataFrame(columns=["username", "password_hash", "created_at"])
-
+            # Import User model from database module
+            from .database import User
+            
             # Create new user
-            new_user = {
-                "username": username,
-                "password_hash": self._hash_password(password),
-                "created_at": datetime.now().isoformat(),
-            }
+            new_user = User(
+                username=username,
+                password_hash=self._hash_password(password),
+                created_at=datetime.utcnow()
+            )
 
-            # Add user to dataframe
-            df = pd.concat([df, pd.DataFrame([new_user])], ignore_index=True)
-            df.to_csv(self.users_file, index=False)
+            with self.get_db_session() as session:
+                session.add(new_user)
+                session.commit()
 
+            logger.info(f"User registered successfully: {username}")
             return True
 
+        except SQLAlchemyError as e:
+            logger.error(f"Database error registering user: {e}")
+            return False
         except Exception as e:
-            print(f"Error registering user: {e}")
+            logger.error(f"Error registering user: {e}")
             return False
 
     def login_user(self, username: str, password: str) -> bool:
         """Authenticate a user"""
         try:
-            if not os.path.exists(self.users_file):
-                return False
+            from .database import User
+            
+            with self.get_db_session() as session:
+                user = session.query(User)\
+                    .filter(User.username == username)\
+                    .first()
 
-            df = pd.read_csv(self.users_file)
-            user_row = df[df["username"] == username]
+                if not user:
+                    return False
 
-            if user_row.empty:
-                return False
+                stored_hash = user.password_hash
+                input_hash = self._hash_password(password)
 
-            stored_hash = user_row.iloc[0]["password_hash"]
-            input_hash = self._hash_password(password)
+                return stored_hash == input_hash
 
-            return stored_hash == input_hash
-
+        except SQLAlchemyError as e:
+            logger.error(f"Database error during login: {e}")
+            return False
         except Exception as e:
-            print(f"Error during login: {e}")
+            logger.error(f"Error during login: {e}")
             return False
 
     def user_exists(self, username: str) -> bool:
         """Check if a user exists"""
         try:
-            if not os.path.exists(self.users_file):
-                return False
+            from .database import User
+            
+            with self.get_db_session() as session:
+                user = session.query(User)\
+                    .filter(User.username == username)\
+                    .first()
+                
+                return user is not None
 
-            df = pd.read_csv(self.users_file)
-            return not df[df["username"] == username].empty
-
+        except SQLAlchemyError as e:
+            logger.error(f"Database error checking user existence: {e}")
+            return False
         except Exception as e:
-            print(f"Error checking user existence: {e}")
+            logger.error(f"Error checking user existence: {e}")
             return False
 
     def get_user_info(self, username: str) -> Optional[dict]:
         """Get user information"""
         try:
-            if not os.path.exists(self.users_file):
-                return None
+            from .database import User
+            
+            with self.get_db_session() as session:
+                user = session.query(User)\
+                    .filter(User.username == username)\
+                    .first()
 
-            df = pd.read_csv(self.users_file)
-            user_row = df[df["username"] == username]
+                if not user:
+                    return None
 
-            if user_row.empty:
-                return None
+                return {
+                    "username": user.username,
+                    "created_at": user.created_at.isoformat(),
+                }
 
-            user_data = user_row.iloc[0]
-            return {
-                "username": user_data["username"],
-                "created_at": user_data["created_at"],
-            }
-
+        except SQLAlchemyError as e:
+            logger.error(f"Database error getting user info: {e}")
+            return None
         except Exception as e:
-            print(f"Error getting user info: {e}")
+            logger.error(f"Error getting user info: {e}")
             return None
 
     def change_password(
@@ -124,18 +141,25 @@ class AuthManager:
             if not self.login_user(username, old_password):
                 return False
 
-            # Read users file
-            df = pd.read_csv(self.users_file)
+            from .database import User
+            
+            with self.get_db_session() as session:
+                user = session.query(User)\
+                    .filter(User.username == username)\
+                    .first()
+                
+                if user:
+                    user.password_hash = self._hash_password(new_password)
+                    session.commit()
+                    logger.info(f"Password changed successfully for user: {username}")
+                    return True
+                else:
+                    logger.warning(f"User not found for password change: {username}")
+                    return False
 
-            # Update password
-            user_mask = df["username"] == username
-            df.loc[user_mask, "password_hash"] = self._hash_password(new_password)
-
-            # Save updated data
-            df.to_csv(self.users_file, index=False)
-
-            return True
-
+        except SQLAlchemyError as e:
+            logger.error(f"Database error changing password: {e}")
+            return False
         except Exception as e:
-            print(f"Error changing password: {e}")
+            logger.error(f"Error changing password: {e}")
             return False
