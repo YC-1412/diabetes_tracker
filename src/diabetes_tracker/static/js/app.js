@@ -43,6 +43,10 @@ function setupEventListeners() {
     logoutBtn.addEventListener('click', handleLogout);
     refreshRecommendationBtn.addEventListener('click', loadRecommendation);
     
+    // AI buttons
+    document.getElementById('get-meal-suggestions').addEventListener('click', getMealSuggestions);
+    document.getElementById('get-exercise-recommendations').addEventListener('click', getExerciseRecommendations);
+    
     // Notification
     notificationClose.addEventListener('click', hideNotification);
     
@@ -196,8 +200,11 @@ async function loadUserData() {
         // Load chart data
         await loadChartData();
         
-        // Load recommendation
-        await loadRecommendation();
+        // Only load recommendation if there's no current recommendation
+        const recommendationContent = document.getElementById('recommendation-content');
+        if (!recommendationContent.innerHTML || recommendationContent.innerHTML.includes('Start logging')) {
+            await loadRecommendation();
+        }
         
     } catch (error) {
         showNotification('Error loading user data', 'error');
@@ -414,12 +421,86 @@ async function loadRecommendation() {
         
         if (response.ok) {
             document.getElementById('recommendation-content').innerHTML = 
-                `<p>${data.recommendation}</p>`;
+                `<div class="recommendation-text">${formatRecommendationText(data.recommendation)}</div>`;
         }
     } catch (error) {
         console.error('Error loading recommendation:', error);
         document.getElementById('recommendation-content').innerHTML = 
             '<p>Unable to load recommendation. Please try again later.</p>';
+    }
+}
+
+async function getMealSuggestions() {
+    const bloodSugar = document.getElementById('blood-sugar').value;
+    if (!bloodSugar) {
+        showNotification('Please enter your blood sugar level first', 'error');
+        return;
+    }
+    
+    try {
+        showLoading();
+        const response = await fetch('/api/meal-suggestions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                blood_sugar: parseFloat(bloodSugar),
+                preferences: document.getElementById('meal').value || ''
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('recommendation-content').innerHTML = 
+                `<h4>🍽️ Meal Suggestions for Blood Sugar: ${bloodSugar} mg/dL</h4>
+                <div class="recommendation-text">${formatRecommendationText(data.suggestions)}</div>`;
+        } else {
+            showNotification(data.error || 'Failed to get meal suggestions', 'error');
+        }
+    } catch (error) {
+        console.error('Error getting meal suggestions:', error);
+        showNotification('Network error. Please try again.', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function getExerciseRecommendations() {
+    const bloodSugar = document.getElementById('blood-sugar').value;
+    if (!bloodSugar) {
+        showNotification('Please enter your blood sugar level first', 'error');
+        return;
+    }
+    
+    try {
+        showLoading();
+        const response = await fetch('/api/exercise-recommendations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                blood_sugar: parseFloat(bloodSugar),
+                current_exercise: document.getElementById('exercise').value || 'None'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('recommendation-content').innerHTML = 
+                `<h4>🏃‍♂️ Exercise Recommendations for Blood Sugar: ${bloodSugar} mg/dL</h4>
+                <div class="recommendation-text">${formatRecommendationText(data.recommendations)}</div>`;
+        } else {
+            showNotification(data.error || 'Failed to get exercise recommendations', 'error');
+        }
+    } catch (error) {
+        console.error('Error getting exercise recommendations:', error);
+        showNotification('Network error. Please try again.', 'error');
+    } finally {
+        hideLoading();
     }
 }
 
@@ -462,6 +543,12 @@ async function handleLogEntry(event) {
             showNotification('Entry logged successfully!', 'success');
             logEntryForm.reset();
             setDefaultDate();
+            
+            // Display AI recommendation if available
+            if (data.recommendation) {
+                document.getElementById('recommendation-content').innerHTML = 
+                    `<div class="recommendation-text">${formatRecommendationText(data.recommendation)}</div>`;
+            }
             
             // Reload user data
             await loadUserData();
@@ -517,6 +604,24 @@ function formatDateTime(dateTimeString) {
         hour: '2-digit',
         minute: '2-digit'
     });
+}
+
+// Format recommendation text with proper line breaks
+function formatRecommendationText(text) {
+    if (!text) return '';
+    
+    // Replace double newlines with paragraph breaks
+    let formatted = text.replace(/\n\n/g, '</p><p>');
+    
+    // Replace single newlines with line breaks
+    formatted = formatted.replace(/\n/g, '<br>');
+    
+    // Wrap in paragraph tags if not already wrapped
+    if (!formatted.startsWith('<p>')) {
+        formatted = '<p>' + formatted + '</p>';
+    }
+    
+    return formatted;
 }
 
 // Error handling

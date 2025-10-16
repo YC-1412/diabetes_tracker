@@ -1,5 +1,5 @@
 import os
-import openai
+from openai import OpenAI
 
 
 class AIRecommendationEngine:
@@ -8,9 +8,14 @@ class AIRecommendationEngine:
     def __init__(self):
         self.api_key = os.getenv("OPENAI_API_KEY")
         if self.api_key:
-            openai.api_key = self.api_key
+            try:
+                self.client = OpenAI(api_key=self.api_key)
+            except Exception as e:
+                print(f"Warning: Failed to initialize OpenAI client: {e}")
+                self.client = None
         else:
             print("Warning: OPENAI_API_KEY not found in environment variables")
+            self.client = None
 
     def get_recommendation(
         self, username: str, blood_sugar: float, meal: str, exercise: str
@@ -34,7 +39,8 @@ class AIRecommendationEngine:
                         "content": """You are a helpful diabetes management assistant.
                         Provide personalized, friendly, and actionable advice based on the user's data.
                         Focus on practical suggestions for diet, exercise, and lifestyle changes.
-                        Keep responses conversational and encouraging, but also informative.""",
+                        Keep responses conversational and encouraging, but also informative.
+                        IMPORTANT: Limit your response to 200 words maximum.""",
                     },
                     {"role": "user", "content": context},
                 ],
@@ -67,6 +73,8 @@ class AIRecommendationEngine:
         Please provide personalized advice for diabetes management based on this data.
         Consider the blood sugar level, meal choices, and exercise routine.
         Give specific, actionable recommendations for diet, exercise, and lifestyle.
+        
+        IMPORTANT: Limit your response to 200 words maximum.
         """
 
         return context
@@ -83,6 +91,19 @@ class AIRecommendationEngine:
             return "Elevated"
         else:
             return "High (Hyperglycemia)"
+
+    def _limit_response_length(self, text: str, max_words: int = 200) -> str:
+        """Limit response to specified number of words"""
+        if not text:
+            return text
+        
+        words = text.split()
+        if len(words) <= max_words:
+            return text
+        
+        # Truncate to max_words and add ellipsis
+        truncated_words = words[:max_words]
+        return ' '.join(truncated_words) + '...'
 
     def _get_basic_recommendation(
         self, blood_sugar: float, meal: str, exercise: str
@@ -114,6 +135,8 @@ class AIRecommendationEngine:
             Provide 3-4 meal suggestions that would be appropriate for this blood sugar level.
             Include breakfast, lunch, dinner, and snack options. Focus on balanced nutrition
             with appropriate carbohydrate content for diabetes management.
+            
+            IMPORTANT: Limit your response to 200 words maximum.
             """
 
             response = openai.ChatCompletion.create(
@@ -121,11 +144,11 @@ class AIRecommendationEngine:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a nutrition expert specializing in diabetes management. Provide practical meal suggestions.",
+                        "content": "You are a nutrition expert specializing in diabetes management. Provide practical meal suggestions. IMPORTANT: Limit your response to 200 words maximum.",
                     },
                     {"role": "user", "content": context},
                 ],
-                max_tokens=400,
+                max_tokens=250,
                 temperature=0.7,
             )
 
@@ -139,32 +162,32 @@ class AIRecommendationEngine:
         """Basic meal suggestions when AI is not available"""
 
         if blood_sugar < 100:
-            return """
+            return self._limit_response_length("""
             Meal Suggestions for Normal Blood Sugar:
 
             Breakfast: Oatmeal with berries and nuts, or whole grain toast with avocado
             Lunch: Grilled chicken salad with mixed greens and olive oil dressing
             Dinner: Baked salmon with quinoa and steamed vegetables
             Snacks: Greek yogurt with berries, or apple with almond butter
-            """
+            """, 200)
         elif blood_sugar < 140:
-            return """
+            return self._limit_response_length("""
             Meal Suggestions for Post-Meal Normal Blood Sugar:
 
             Breakfast: Greek yogurt with granola and fruit
             Lunch: Turkey and vegetable wrap with whole grain tortilla
             Dinner: Lean beef stir-fry with brown rice and vegetables
             Snacks: Hummus with carrot sticks, or mixed nuts
-            """
+            """, 200)
         else:
-            return """
+            return self._limit_response_length("""
             Meal Suggestions for Elevated Blood Sugar:
 
             Breakfast: Scrambled eggs with spinach and whole grain toast
             Lunch: Grilled fish with quinoa and roasted vegetables
             Dinner: Chicken breast with sweet potato and green beans
             Snacks: Cottage cheese with cucumber, or hard-boiled eggs
-            """
+            """, 200)
 
     def get_exercise_recommendations(
         self, blood_sugar: float, current_exercise: str
@@ -183,6 +206,8 @@ class AIRecommendationEngine:
 
             Provide exercise recommendations that are safe and beneficial for this blood sugar level.
             Include both aerobic and strength training suggestions, with appropriate intensity levels.
+            
+            IMPORTANT: Limit your response to 200 words maximum.
             """
 
             response = openai.ChatCompletion.create(
@@ -190,11 +215,11 @@ class AIRecommendationEngine:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a fitness expert specializing in diabetes management. Provide safe and effective exercise recommendations.",
+                        "content": "You are a fitness expert specializing in diabetes management. Provide safe and effective exercise recommendations. IMPORTANT: Limit your response to 200 words maximum.",
                     },
                     {"role": "user", "content": context},
                 ],
-                max_tokens=300,
+                max_tokens=250,
                 temperature=0.7,
             )
 
@@ -212,10 +237,10 @@ class AIRecommendationEngine:
         """Basic exercise recommendations when AI is not available"""
 
         if blood_sugar < 70:
-            return "Your blood sugar is low. Avoid intense exercise until your levels stabilize. Consider light walking or gentle stretching after having a snack."
+            return self._limit_response_length("Your blood sugar is low. Avoid intense exercise until your levels stabilize. Consider light walking or gentle stretching after having a snack.", 200)
 
         elif blood_sugar > 250:
-            return "Your blood sugar is high. Avoid intense exercise and check for ketones if you have type 1 diabetes. Light walking may help lower blood sugar gradually."
+            return self._limit_response_length("Your blood sugar is high. Avoid intense exercise and check for ketones if you have type 1 diabetes. Light walking may help lower blood sugar gradually.", 200)
 
         else:
-            return f"Great time for exercise! Your blood sugar of {blood_sugar} mg/dL is in a safe range. Consider 30 minutes of moderate activity like walking, swimming, or cycling. Don't forget to monitor your levels during and after exercise."
+            return self._limit_response_length(f"Great time for exercise! Your blood sugar of {blood_sugar} mg/dL is in a safe range. Consider 30 minutes of moderate activity like walking, swimming, or cycling. Don't forget to monitor your levels during and after exercise.", 200)

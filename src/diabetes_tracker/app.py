@@ -5,7 +5,7 @@ import os
 
 # Import our modules
 from .modules.database import DataManager
-# from .modules.ai_recommendations import AIRecommendationEngine
+from .modules.ai_recommendations import AIRecommendationEngine
 from .modules.auth import AuthManager
 
 # Load environment variables
@@ -21,8 +21,8 @@ CORS(app)
 
 # Initialize modules
 data_manager = DataManager()
-# ai_engine = AIRecommendationEngine()
-auth_manager = AuthManager()
+ai_engine = AIRecommendationEngine()
+auth_manager = AuthManager(data_manager)
 
 
 @app.route("/")
@@ -91,14 +91,14 @@ def log_entry():
         entry_id = data_manager.save_entry(username, blood_sugar, meal, exercise, date)
 
         # Get AI recommendation
-        # recommendation = ai_engine.get_recommendation(username, blood_sugar, meal, exercise)
+        recommendation = ai_engine.get_recommendation(username, blood_sugar, meal, exercise)
 
         return (
             jsonify(
                 {
                     "message": "Entry logged successfully",
                     "entry_id": entry_id,
-                    # 'recommendation': recommendation
+                    'recommendation': recommendation
                 }
             ),
             201,
@@ -136,32 +136,68 @@ def get_chart_data(username):
         return jsonify({"error": str(e)}), 500
 
 
-# @app.route('/api/recommendation/<username>', methods=['GET'])
-# def get_recommendation(username):
-#     """Get AI recommendation for user"""
-#     try:
-#         if not username:
-#             return jsonify({'error': 'Username is required'}), 400
+@app.route('/api/recommendation/<username>', methods=['GET'])
+def get_recommendation(username):
+    """Get AI recommendation for user"""
+    try:
+        if not username:
+            return jsonify({'error': 'Username is required'}), 400
 
-#         # Get user's recent data for context
-#         recent_data = data_manager.get_recent_entries(username, limit=5)
+        # Get user's recent data for context
+        recent_data = data_manager.get_recent_entries(username, limit=5)
 
-#         if not recent_data:
-#             return jsonify({'recommendation': 'Start logging your daily data to receive personalized recommendations!'}), 200
+        if not recent_data:
+            return jsonify({'recommendation': 'Start logging your daily data to receive personalized recommendations!'}), 200
 
-#         # Generate recommendation based on recent data
-#         latest_entry = recent_data[0]
-#         recommendation = ai_engine.get_recommendation(
-#             username,
-#             latest_entry['blood_sugar'],
-#             latest_entry['meal'],
-#             latest_entry['exercise']
-#         )
+        # Generate recommendation based on recent data
+        latest_entry = recent_data[0]
+        recommendation = ai_engine.get_recommendation(
+            username,
+            latest_entry['blood_sugar'],
+            latest_entry['meal'],
+            latest_entry['exercise']
+        )
 
-#         return jsonify({'recommendation': recommendation}), 200
+        return jsonify({'recommendation': recommendation}), 200
 
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/meal-suggestions', methods=['POST'])
+def get_meal_suggestions():
+    """Get AI meal suggestions based on blood sugar level"""
+    try:
+        data = request.get_json()
+        blood_sugar = data.get('blood_sugar')
+        preferences = data.get('preferences', '')
+
+        if not blood_sugar:
+            return jsonify({'error': 'Blood sugar level is required'}), 400
+
+        suggestions = ai_engine.get_meal_suggestions(blood_sugar, preferences)
+        return jsonify({'suggestions': suggestions}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/exercise-recommendations', methods=['POST'])
+def get_exercise_recommendations():
+    """Get AI exercise recommendations based on blood sugar level"""
+    try:
+        data = request.get_json()
+        blood_sugar = data.get('blood_sugar')
+        current_exercise = data.get('current_exercise', '')
+
+        if not blood_sugar:
+            return jsonify({'error': 'Blood sugar level is required'}), 400
+
+        recommendations = ai_engine.get_exercise_recommendations(blood_sugar, current_exercise)
+        return jsonify({'recommendations': recommendations}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5001)
