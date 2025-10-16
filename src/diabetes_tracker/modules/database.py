@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, Column, String, Float, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
