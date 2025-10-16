@@ -68,6 +68,13 @@
                 <div class="dashboard-header">
                     <h2>Welcome, <span id="user-display"></span>!</h2>
                     <div class="header-actions">
+                        <div class="units-selector">
+                            <label for="units-select">Units:</label>
+                            <select id="units-select" class="units-select">
+                                <option value="mg/dL">mg/dL</option>
+                                <option value="mmol/L">mmol/L</option>
+                            </select>
+                        </div>
                         <button id="change-password-btn" class="btn btn-secondary">Change Password</button>
                         <button id="logout-btn" class="btn btn-secondary">Logout</button>
                     </div>
@@ -121,7 +128,7 @@
                     <form id="log-entry-form" class="log-entry-form">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="blood-sugar">Blood Sugar (mg/dL)</label>
+                                <label for="blood-sugar" id="blood-sugar-label">Blood Sugar (mg/dL)</label>
                                 <input type="number" id="blood-sugar" name="blood_sugar" min="50" max="500" step="0.1" required>
                             </div>
                             <div class="form-group">

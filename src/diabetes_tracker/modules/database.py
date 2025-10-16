@@ -20,6 +20,7 @@ class User(Base):
     
     username = Column(String(50), primary_key=True)
     password_hash = Column(String(255), nullable=False)
+    preferred_units = Column(String(10), default='mg/dL')  # 'mg/dL' or 'mmol/L'
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -53,6 +54,11 @@ class DataManager:
         # Initialize database connection
         self.engine = None
         self.SessionLocal = None
+        self.db_available = False
+        
+        # Fallback storage for when database is not available
+        self._fallback_user_units = {}
+        
         self._initialize_database()
 
     def _initialize_database(self):
@@ -63,15 +69,64 @@ class DataManager:
             
             # Create tables
             Base.metadata.create_all(bind=self.engine)
+            self.db_available = True
             logger.info("Database initialized successfully")
             
         except Exception as e:
-            logger.error(f"Failed to initialize database: {e}")
-            raise
+            logger.warning(f"Failed to initialize database: {e}")
+            logger.info("Falling back to in-memory storage for user preferences")
+            self.db_available = False
 
     def get_db_session(self) -> Session:
         """Get a database session"""
+        if not self.db_available:
+            raise SQLAlchemyError("Database not available")
         return self.SessionLocal()
+
+    def get_user_preferred_units(self, username: str) -> str:
+        """Get user's preferred units"""
+        # Check fallback storage first (most reliable)
+        if username in self._fallback_user_units:
+            return self._fallback_user_units[username]
+        
+        # Try to get from database if available
+        if self.db_available:
+            try:
+                with self.get_db_session() as session:
+                    user = session.query(User).filter(User.username == username).first()
+                    if user and user.preferred_units:
+                        # Cache in fallback storage for future use
+                        self._fallback_user_units[username] = user.preferred_units
+                        return user.preferred_units
+            except Exception as e:
+                logger.warning(f"Could not get units from database for {username}: {e}")
+        
+        # Default fallback
+        return 'mg/dL'
+
+    def update_user_preferred_units(self, username: str, units: str) -> bool:
+        """Update user's preferred units"""
+        # Always use fallback storage for unit preferences
+        # This ensures unit switching works regardless of database status
+        self._fallback_user_units[username] = units
+        logger.info(f"Updated preferred units for {username} in fallback storage: {units}")
+        
+        # Try to sync with database if available, but don't fail if it's not
+        if self.db_available:
+            try:
+                with self.get_db_session() as session:
+                    user = session.query(User).filter(User.username == username).first()
+                    if user:
+                        user.preferred_units = units
+                        session.commit()
+                        logger.info(f"Synced preferred units for {username} to database: {units}")
+                    else:
+                        logger.info(f"User {username} not found in database, using fallback storage only")
+            except Exception as e:
+                logger.warning(f"Could not sync units to database for {username}: {e}")
+                # Don't fail - we have fallback storage
+        
+        return True
 
     def save_entry(
         self, username: str, blood_sugar: float, meal: str, exercise: str, date: str
