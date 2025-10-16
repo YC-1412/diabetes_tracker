@@ -123,21 +123,44 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pytest.ini-options]
-testpaths = ["tests", "test_*.py"]
-python_files = ["test_*.py", "*_test.py"]
+# Test discovery
+testpaths = ["tests"]
+python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+
+# Output and reporting
 addopts = [
+    "-v",
+    "--tb=short",
     "--strict-markers",
-    "--strict-config",
+    "--disable-warnings",
+    "--color=yes",
     "--cov=src/diabetes_tracker",
     "--cov-report=term-missing",
-    "--cov-report=html",
+    "--cov-report=html:htmlcov",
     "--cov-report=xml",
+    "--cov-fail-under=80",
 ]
+
+# Markers
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow running tests",
+    "api: API tests",
+    "chart: Chart functionality tests",
+]
+
+# Minimum version
+minversion = "6.0"
+
+# Test collection
+collect_ignore = [
+    "setup.py",
+    "build/",
+    "dist/",
+    "*.egg-info/",
 ]
 
 [tool.coverage.run]
