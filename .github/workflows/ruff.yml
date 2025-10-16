@@ -5,7 +5,9 @@ on:
   pull_request:
     branches: [ main, develop ]
     paths:
-      - '*.py'
+      - 'src/**/*.py'
+      - 'tests/**/*.py'
+      - 'setup/**/*.py'
 
 jobs:
   ruff-lint:

@@ -93,9 +93,9 @@ def main():
     # Run in watch mode if requested
     if args.watch:
         watch_cmd = f"ptw {test_path} -- -v"
-        print(f"\nStarting test watch mode...")
+        print("\nStarting test watch mode...")
         print(f"Command: {watch_cmd}")
-        print(f"Press Ctrl+C to stop")
+        print("Press Ctrl+C to stop")
         try:
             subprocess.run(watch_cmd, shell=True)
         except KeyboardInterrupt:

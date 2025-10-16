@@ -22,7 +22,7 @@ def setup_api_key():
             # Copy from env.example
             example_file = Path(".env.example")
             if example_file.exists():
-                with open(example_file, 'r') as f:
+                with open(example_file) as f:
                     content = f.read()
                 with open(env_file, 'w') as f:
                     f.write(content)
@@ -36,14 +36,14 @@ def setup_api_key():
     
     # Read current .env content
     try:
-        with open(env_file, 'r') as f:
+        with open(env_file) as f:
             content = f.read()
     except Exception as e:
         print(f"Failed to read .env file: {e}")
         return False
     
     # Check if API key is already set
-    if "OPENAI_API_KEY=" in content and not "OPENAI_API_KEY=your-openai-api-key" in content:
+    if "OPENAI_API_KEY=" in content and "OPENAI_API_KEY=your-openai-api-key" not in content:
         print("OpenAI API key is already configured")
         return True
     

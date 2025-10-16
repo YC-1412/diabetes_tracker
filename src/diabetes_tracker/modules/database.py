@@ -1,7 +1,6 @@
 import os
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional
 from sqlalchemy import create_engine, Column, String, Float, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -108,7 +107,7 @@ class DataManager:
             logger.error(f"Error saving entry: {e}")
             raise
 
-    def get_user_history(self, username: str) -> List[Dict]:
+    def get_user_history(self, username: str) -> list[dict]:
         """Get all entries for a specific user"""
         try:
             with self.get_db_session() as session:
@@ -137,7 +136,7 @@ class DataManager:
             logger.error(f"Error getting user history: {e}")
             return []
 
-    def get_recent_entries(self, username: str, limit: int = 5) -> List[Dict]:
+    def get_recent_entries(self, username: str, limit: int = 5) -> list[dict]:
         """Get recent entries for a user"""
         try:
             with self.get_db_session() as session:
@@ -167,7 +166,7 @@ class DataManager:
             logger.error(f"Error getting recent entries: {e}")
             return []
 
-    def get_user_stats(self, username: str) -> Dict:
+    def get_user_stats(self, username: str) -> dict:
         """Get statistics for a user"""
         try:
             with self.get_db_session() as session:
@@ -205,7 +204,7 @@ class DataManager:
             logger.error(f"Error getting user stats: {e}")
             return {"total_entries": 0, "avg_blood_sugar": 0, "entries_this_week": 0}
 
-    def get_chart_data(self, username: str) -> Dict:
+    def get_chart_data(self, username: str) -> dict:
         """Get blood sugar data formatted for charting"""
         try:
             with self.get_db_session() as session:
