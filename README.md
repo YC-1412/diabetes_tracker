@@ -1,4 +1,4 @@
-[![Flake8 Lint](https://github.com/YC-1412/diabetes_tracker/actions/workflows/flake8.yml/badge.svg)](https://github.com/YC-1412/diabetes_tracker/actions/workflows/flake8.yml)
+[![Ruff Lint](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ruff.yml/badge.svg)](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ruff.yml)
 
 # Diabetes Tracker - AI-Powered Management Assistant
 
