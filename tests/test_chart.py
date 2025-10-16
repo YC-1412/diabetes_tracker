@@ -323,7 +323,7 @@ class TestChartWithMockData:
         # Mock the API response
         mock_response = type('MockResponse', (), {
             'status_code': 200,
-            'json': lambda: sample_chart_data
+            'json': lambda self: sample_chart_data
         })()
         mock_get.return_value = mock_response
         
@@ -342,7 +342,7 @@ class TestChartWithMockData:
         # Mock an error response
         mock_response = type('MockResponse', (), {
             'status_code': 500,
-            'json': lambda: {"error": "Internal server error"}
+            'json': lambda self: {"error": "Internal server error"}
         })()
         mock_get.return_value = mock_response
         
