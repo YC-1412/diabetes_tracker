@@ -304,6 +304,39 @@ body {
     color: #555;
 }
 
+.recommendation-text {
+    line-height: 1.8;
+    color: #555;
+}
+
+.recommendation-text p {
+    margin-bottom: 15px;
+    text-align: justify;
+}
+
+.recommendation-text p:last-child {
+    margin-bottom: 0;
+}
+
+.recommendation-text h4 {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.ai-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ai-buttons .btn {
+    flex: 1;
+    min-width: 150px;
+    font-size: 0.9rem;
+    padding: 10px 15px;
+}
+
 /* History Section */
 .history-section {
     background: #f8f9fa;
@@ -453,6 +486,14 @@ body {
     
     .chart-container {
         height: 250px;
+    }
+    
+    .ai-buttons {
+        flex-direction: column;
+    }
+    
+    .ai-buttons .btn {
+        min-width: auto;
     }
 }
 
