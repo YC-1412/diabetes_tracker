@@ -147,7 +147,9 @@ def get_recommendation(username):
         recent_data = data_manager.get_recent_entries(username, limit=5)
 
         if not recent_data:
-            return jsonify({'recommendation': 'Start logging your daily data to receive personalized recommendations!'}), 200
+            return jsonify({
+                'recommendation': 'Start logging your daily data to receive personalized recommendations!'
+            }), 200
 
         # Generate recommendation based on recent data
         latest_entry = recent_data[0]

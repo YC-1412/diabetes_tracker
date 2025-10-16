@@ -115,13 +115,21 @@ class AIRecommendationEngine:
         # status = self._analyze_blood_sugar(blood_sugar)
 
         if blood_sugar < 70:
-            return f"Your blood sugar is low ({blood_sugar} mg/dL). Consider having a small snack with carbohydrates and protein. Monitor your levels closely and consult your healthcare provider if this happens frequently."
+            return (f"Your blood sugar is low ({blood_sugar} mg/dL). "
+                   f"Consider having a small snack with carbohydrates and protein. "
+                   f"Monitor your levels closely and consult your healthcare provider "
+                   f"if this happens frequently.")
 
         elif blood_sugar > 200:
-            return f"Your blood sugar is elevated ({blood_sugar} mg/dL). Consider increasing your physical activity, monitoring your carbohydrate intake, and staying hydrated. If this persists, consult your healthcare provider."
+            return (f"Your blood sugar is elevated ({blood_sugar} mg/dL). "
+                   f"Consider increasing your physical activity, monitoring your "
+                   f"carbohydrate intake, and staying hydrated. If this persists, "
+                   f"consult your healthcare provider.")
 
         else:
-            return f"Your blood sugar level of {blood_sugar} mg/dL looks good! Keep up with your current routine. Remember to maintain regular meal times, stay active, and monitor your levels consistently."
+            return (f"Your blood sugar level of {blood_sugar} mg/dL looks good! "
+                   f"Keep up with your current routine. Remember to maintain regular "
+                   f"meal times, stay active, and monitor your levels consistently.")
 
     def get_meal_suggestions(self, blood_sugar: float, preferences: str = "") -> str:
         """Get meal suggestions based on blood sugar level"""
@@ -146,7 +154,9 @@ class AIRecommendationEngine:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a nutrition expert specializing in diabetes management. Provide practical meal suggestions. IMPORTANT: Limit your response to 200 words maximum.",
+                        "content": ("You are a nutrition expert specializing in diabetes management. "
+                                   "Provide practical meal suggestions. "
+                                   "IMPORTANT: Limit your response to 200 words maximum."),
                     },
                     {"role": "user", "content": context},
                 ],
@@ -217,7 +227,9 @@ class AIRecommendationEngine:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a fitness expert specializing in diabetes management. Provide safe and effective exercise recommendations. IMPORTANT: Limit your response to 200 words maximum.",
+                        "content": ("You are a fitness expert specializing in diabetes management. "
+                                   "Provide safe and effective exercise recommendations. "
+                                   "IMPORTANT: Limit your response to 200 words maximum."),
                     },
                     {"role": "user", "content": context},
                 ],
@@ -239,10 +251,17 @@ class AIRecommendationEngine:
         """Basic exercise recommendations when AI is not available"""
 
         if blood_sugar < 70:
-            return self._limit_response_length("Your blood sugar is low. Avoid intense exercise until your levels stabilize. Consider light walking or gentle stretching after having a snack.", 200)
+            return self._limit_response_length(
+                "Your blood sugar is low. Avoid intense exercise until your levels stabilize. "
+                "Consider light walking or gentle stretching after having a snack.", 200)
 
         elif blood_sugar > 250:
-            return self._limit_response_length("Your blood sugar is high. Avoid intense exercise and check for ketones if you have type 1 diabetes. Light walking may help lower blood sugar gradually.", 200)
+            return self._limit_response_length(
+                "Your blood sugar is high. Avoid intense exercise and check for ketones "
+                "if you have type 1 diabetes. Light walking may help lower blood sugar gradually.", 200)
 
         else:
-            return self._limit_response_length(f"Great time for exercise! Your blood sugar of {blood_sugar} mg/dL is in a safe range. Consider 30 minutes of moderate activity like walking, swimming, or cycling. Don't forget to monitor your levels during and after exercise.", 200)
+            return self._limit_response_length(
+                f"Great time for exercise! Your blood sugar of {blood_sugar} mg/dL is in a safe range. "
+                f"Consider 30 minutes of moderate activity like walking, swimming, or cycling. "
+                f"Don't forget to monitor your levels during and after exercise.", 200)
