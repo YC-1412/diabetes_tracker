@@ -91,9 +91,15 @@ function setupEventListeners() {
 
 function setDefaultDate() {
     const dateInput = document.getElementById('date');
+    const timeInput = document.getElementById('time');
     if (dateInput) {
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
+    }
+    if (timeInput) {
+        const now = new Date();
+        const timeString = now.toTimeString().split(' ')[0].substring(0, 5); // Get HH:MM format
+        timeInput.value = timeString;
     }
 }
 
@@ -508,7 +514,7 @@ function createBloodSugarChart(chartData) {
                     displayColors: false,
                     callbacks: {
                         title: function(context) {
-                            return `Date: ${chartData.dates[context[0].dataIndex]}`;
+                            return `Date & Time: ${chartData.dates[context[0].dataIndex]}`;
                         },
                         label: function(context) {
                             return `Blood Sugar: ${context.parsed.y} ${chartData.units || currentUnits}`;
@@ -659,6 +665,10 @@ async function handleLogEntry(event) {
     const meal = formData.get('meal');
     const exercise = formData.get('exercise');
     const date = formData.get('date');
+    const time = formData.get('time');
+    
+    // Combine date and time into ISO string
+    const dateTime = new Date(`${date}T${time}`).toISOString();
     
     // Validate blood sugar based on current units
     const range = getValidationRange(currentUnits);
@@ -679,7 +689,7 @@ async function handleLogEntry(event) {
                 blood_sugar: bloodSugar,
                 meal,
                 exercise,
-                date,
+                date: dateTime,
                 units: currentUnits
             })
         });

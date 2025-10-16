@@ -142,7 +142,9 @@ class DataManager:
         
         try:
             # Parse date string to datetime
-            entry_date = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            # Remove timezone info and parse as UTC
+            date_clean = date.replace('Z', '').replace('+00:00', '')
+            entry_date = datetime.fromisoformat(date_clean)
             
             new_entry = DiabetesEntry(
                 entry_id=entry_id,
@@ -278,9 +280,10 @@ class DataManager:
                     return {"labels": [], "data": [], "dates": []}
                 
                 # Format data for charting
-                labels = [entry.date.strftime("%m/%d") for entry in entries]
+                # Use created_at for time information since date field doesn't store time
+                labels = [entry.created_at.strftime("%m/%d %H:%M") for entry in entries]
                 data = [entry.blood_sugar for entry in entries]
-                dates = [entry.date.strftime("%Y-%m-%d") for entry in entries]
+                dates = [entry.created_at.strftime("%Y-%m-%d %H:%M:%S") for entry in entries]
                 
                 return {
                     "labels": labels,
