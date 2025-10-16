@@ -23,9 +23,9 @@ diabetes_tracker/
 ├── pyproject.toml        # Modern Python project configuration
 ├── Makefile              # Development commands
 ├── .flake8               # Flake8 configuration
-├── .env.example           # Environment variables template
+├── .env.example          # Environment variables template
 ├── .github/workflows/    # GitHub Actions CI/CD
-│   └── ci.yml           # Continuous integration workflow
+│   └── ruff.yml         # Ruff linting workflow
 ├── src/                  # Source code package
 │   └── diabetes_tracker/ # Main application package
 │       ├── __init__.py   # Package initialization
@@ -35,7 +35,8 @@ diabetes_tracker/
 │       │   ├── __init__.py
 │       │   ├── auth.py           # Authentication management
 │       │   ├── database.py       # Data storage and retrieval
-│       │   └── ai_recommendations.py # AI recommendation engine
+│       │   ├── ai_recommendations.py # AI recommendation engine
+│       │   └── unit_converter.py # Unit conversion utilities
 │       ├── templates/    # HTML templates
 │       │   └── index.html        # Main application page
 │       └── static/       # Static assets
@@ -43,15 +44,10 @@ diabetes_tracker/
 │           │   └── style.css     # Application styling
 │           └── js/
 │               └── app.js        # Frontend JavaScript
-├── tests/              # Test suite
-│   ├── __init__.py
-│   ├── run_tests.py      # Run all tests
-│   ├── test_app.py       # Application tests
-│   └── test_chart.py     # Chart tests
-└── archive/           # Legacy and utility scripts
-    ├── migrate_csv_to_db.py
-    ├── test_db_connection.py
-    └── diagnose_db_connection.py
+└── tests/              # Test suite
+    ├── __init__.py
+    ├── test_app.py       # Application tests
+    └── test_chart.py     # Chart tests
 
 
 ```
