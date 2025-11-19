@@ -1,8 +1,8 @@
-[![Ruff Lint](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ruff.yml/badge.svg)](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ruff.yml)
-[![CI](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/YC-1412/diabetes_tracker/actions/workflows/ci.yml)
-[![Deploy Documentation](https://github.com/YC-1412/diabetes_tracker/actions/workflows/docs.yml/badge.svg)](https://github.com/YC-1412/diabetes_tracker/actions/workflows/docs.yml)
+# Overview
 
-# Diabetes Tracker - AI-Powered Management Assistant
+This page provides a comprehensive overview of the Diabetes Tracker project, including installation, configuration, and usage instructions.
+
+## Project Description
 
 A comprehensive diabetes management application that combines user data logging with AI-powered recommendations using OpenAI's GPT model.
 
@@ -24,34 +24,19 @@ diabetes_tracker/
 ├── requirements-dev.txt   # Development dependencies
 ├── pyproject.toml        # Modern Python project configuration
 ├── Makefile              # Development commands
-├── .flake8               # Flake8 configuration
-├── .env.example          # Environment variables template
 ├── .github/workflows/    # GitHub Actions CI/CD
-│   └── ruff.yml         # Ruff linting workflow
 ├── src/                  # Source code package
 │   └── diabetes_tracker/ # Main application package
-│       ├── __init__.py   # Package initialization
 │       ├── app.py        # Main Flask application
 │       ├── init_db.py    # Database initialization script
 │       ├── modules/      # Backend modules
-│       │   ├── __init__.py
 │       │   ├── auth.py           # Authentication management
 │       │   ├── database.py       # Data storage and retrieval
 │       │   ├── ai_recommendations.py # AI recommendation engine
 │       │   └── unit_converter.py # Unit conversion utilities
 │       ├── templates/    # HTML templates
-│       │   └── index.html        # Main application page
 │       └── static/       # Static assets
-│           ├── css/
-│           │   └── style.css     # Application styling
-│           └── js/
-│               └── app.js        # Frontend JavaScript
 └── tests/              # Test suite
-    ├── __init__.py
-    ├── test_app.py       # Application tests
-    └── test_chart.py     # Chart tests
-
-
 ```
 
 ## Installation
@@ -122,7 +107,7 @@ diabetes_tracker/
    python main.py
    ```
 
-6. **Access the application**
+7. **Access the application**
    Open your web browser and go to: `http://localhost:5001`
 
 ## Development
@@ -170,7 +155,7 @@ make setup-db         # Complete database setup
 
 The project uses several tools to maintain code quality:
 
-- **Flake8**: Linting and style checking
+- **Ruff**: Linting and style checking
 - **Black**: Code formatting
 - **isort**: Import sorting
 - **Bandit**: Security linting
@@ -195,7 +180,7 @@ pytest test_app.py -v
 
 The project includes GitHub Actions workflows that run on every push and pull request:
 
-- **Linting**: Flake8 checks for code style and syntax
+- **Linting**: Ruff checks for code style and syntax
 - **Testing**: Runs tests across multiple Python versions
 - **Security**: Bandit and Safety checks for vulnerabilities
 - **Coverage**: Code coverage reporting
@@ -240,29 +225,8 @@ Create a `.env` file in the project root with the following variables:
    sudo systemctl start postgresql
    sudo systemctl enable postgresql
    ```
-4. Configure PostgreSQL for remote connections:
-   ```bash
-   sudo -u postgres psql
-   ```
-   ```sql
-   ALTER USER postgres PASSWORD 'your-secure-password';
-   CREATE DATABASE diabetes_tracker;
-   \q
-   ```
-5. Edit PostgreSQL configuration:
-   ```bash
-   sudo nano /etc/postgresql/*/main/postgresql.conf
-   # Change: listen_addresses = '*'
-   
-   sudo nano /etc/postgresql/*/main/pg_hba.conf
-   # Add: host all all 0.0.0.0/0 md5
-   ```
-6. Restart PostgreSQL:
-   ```bash
-   sudo systemctl restart postgresql
-   ```
-7. Configure your EC2 security group to allow connections on port 5432
-8. Update your `.env` file with EC2 database credentials
+4. Configure PostgreSQL for remote connections
+5. Update your `.env` file with EC2 database credentials
 
 ### OpenAI API Setup
 
@@ -279,7 +243,7 @@ Create a `.env` file in the project root with the following variables:
 
 1. **Register a new account** or **login** with existing credentials
 2. **Log your first entry** with:
-   - Blood sugar level (mg/dL)
+   - Blood sugar level (mg/dL or mmol/L)
    - Meal description
    - Exercise activities
    - Date
@@ -314,23 +278,20 @@ Create a `.env` file in the project root with the following variables:
 ### Authentication
 - `POST /api/register` - Register new user
 - `POST /api/login` - User login
+- `POST /api/change-password` - Change user password
 
 ### Data Management
 - `POST /api/log-entry` - Log new diabetes entry
 - `GET /api/history/<username>` - Get user history
+- `GET /api/chart-data/<username>` - Get chart data
+- `GET /api/user-stats/<username>` - Get user statistics
 - `GET /api/recommendation/<username>` - Get AI recommendation
+- `POST /api/meal-suggestions` - Get AI meal suggestions
+- `POST /api/exercise-recommendations` - Get AI exercise recommendations
 
-## Data Storage
-
-The application currently uses CSV files for data storage:
-- `data/users.csv` - User accounts and authentication
-- `data/diabetes_entries.csv` - Diabetes tracking data
-
-This makes it easy to:
-- Back up data
-- Export to other systems
-- Analyze with external tools
-- Migrate to a database later
+### User Preferences
+- `POST /api/update-units` - Update user's preferred units
+- `GET /api/user-preferences/<username>` - Get user preferences
 
 ## Security Features
 
@@ -338,26 +299,6 @@ This makes it easy to:
 - Input validation and sanitization
 - CORS protection
 - Secure session management
-
-## Contributing
-
-### Development Workflow
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes
-4. Run tests and linting: `make ci`
-5. Commit your changes: `git commit -m 'Add your feature'`
-6. Push to the branch: `git push origin feature/your-feature`
-7. Submit a pull request
-
-### Code Style
-
-- Follow PEP 8 guidelines
-- Use Black for code formatting
-- Use isort for import sorting
-- Write tests for new features
-- Update documentation as needed
 
 ## Troubleshooting
 
@@ -371,9 +312,10 @@ This makes it easy to:
    - Verify your OpenAI account has credits
    - The app works without API key (basic recommendations)
 
-3. **Data not saving**
-   - Check file permissions in the `data/` directory
-   - Ensure the application has write access
+3. **Database connection errors**
+   - Check database credentials in `.env` file
+   - Verify PostgreSQL is running
+   - Check network connectivity to database host
 
 4. **Port already in use**
    - Change the port in `app.py`: `app.run(port=5001)`
@@ -393,8 +335,7 @@ If you encounter issues:
 
 ## Future Enhancements
 
-- Database integration (PostgreSQL, MySQL)
-- Data visualization and charts
+- Enhanced data visualization and charts
 - Export functionality
 - Mobile app version
 - Advanced AI features
@@ -405,6 +346,3 @@ If you encounter issues:
 
 This project is for educational and personal use. Please consult healthcare professionals for medical advice.
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.

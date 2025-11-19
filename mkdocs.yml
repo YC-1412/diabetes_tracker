@@ -1,0 +1,84 @@
+site_name: Diabetes Tracker Documentation
+site_description: AI-Powered Diabetes Management Assistant - API Documentation and User Guide
+site_author: Diabetes Tracker Team
+site_url: https://YC-1412.github.io/diabetes_tracker
+
+repo_name: YC-1412/diabetes_tracker
+repo_url: https://github.com/YC-1412/diabetes_tracker
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - toc.integrate
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: true
+            show_root_full_path: false
+            show_object_full_path: false
+            show_category_heading: true
+            show_if_no_docstring: false
+            show_signature_annotations: true
+            separate_signature: true
+            line_length: 120
+            merge_init_into_class: true
+  - autorefs
+
+nav:
+  - Home: index.md
+  - Overview: overview.md
+  - API Reference:
+    - Flask Application: api/app.md
+    - Authentication: api/auth.md
+    - Database: api/database.md
+    - AI Recommendations: api/ai_recommendations.md
+    - Unit Converter: api/unit_converter.md
+
