@@ -9,6 +9,14 @@ pytest-mock==3.12.0
 bandit==1.7.5
 safety==2.3.5
 
+# Documentation dependencies
+mkdocs==1.5.3
+mkdocs-material==9.5.3
+mkdocstrings[python]==0.24.0
+mkdocs-autorefs>=0.5.0
+griffe<1.0
+pymdown-extensions==10.5
+
 # Production dependencies (from requirements.txt)
 Flask==2.3.3
 Flask-CORS==4.0.0
