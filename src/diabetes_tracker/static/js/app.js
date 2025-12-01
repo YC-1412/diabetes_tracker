@@ -646,7 +646,9 @@ async function getMealSuggestions() {
             },
             body: JSON.stringify({
                 blood_sugar: parseFloat(bloodSugar),
-                preferences: document.getElementById('meal').value || ''
+                preferences: document.getElementById('meal').value || '',
+                units: currentUnits,
+                username: currentUser ? currentUser.username : null
             })
         });
         
@@ -654,7 +656,7 @@ async function getMealSuggestions() {
         
         if (response.ok) {
             document.getElementById('recommendation-content').innerHTML = 
-                `<h4>🍽️ Meal Suggestions for Blood Sugar: ${bloodSugar} mg/dL</h4>
+                `<h4>🍽️ Meal Suggestions for Blood Sugar: ${bloodSugar} ${currentUnits}</h4>
                 <div class="recommendation-text">${formatRecommendationText(data.suggestions)}</div>`;
         } else {
             showNotification(data.error || 'Failed to get meal suggestions', 'error');
@@ -683,7 +685,9 @@ async function getExerciseRecommendations() {
             },
             body: JSON.stringify({
                 blood_sugar: parseFloat(bloodSugar),
-                current_exercise: document.getElementById('exercise').value || 'None'
+                current_exercise: document.getElementById('exercise').value || 'None',
+                units: currentUnits,
+                username: currentUser ? currentUser.username : null
             })
         });
         
@@ -691,7 +695,7 @@ async function getExerciseRecommendations() {
         
         if (response.ok) {
             document.getElementById('recommendation-content').innerHTML = 
-                `<h4>🏃‍♂️ Exercise Recommendations for Blood Sugar: ${bloodSugar} mg/dL</h4>
+                `<h4>🏃‍♂️ Exercise Recommendations for Blood Sugar: ${bloodSugar} ${currentUnits}</h4>
                 <div class="recommendation-text">${formatRecommendationText(data.recommendations)}</div>`;
         } else {
             showNotification(data.error || 'Failed to get exercise recommendations', 'error');

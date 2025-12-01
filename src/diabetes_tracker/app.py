@@ -106,13 +106,8 @@ def log_entry():
         # Save the entry (always store in mg/dL)
         entry_id = data_manager.save_entry(username, blood_sugar_mg_dl, meal, exercise, date)
 
-        # Get AI recommendation (convert back to user's preferred units for display)
-        if user_units != "mg/dL":
-            blood_sugar_for_ai = UnitConverter.convert_to_user_units(blood_sugar_mg_dl, "mg/dL", user_units)
-        else:
-            blood_sugar_for_ai = blood_sugar_mg_dl
-            
-        recommendation = ai_engine.get_recommendation(username, blood_sugar_for_ai, meal, exercise)
+        # Get AI recommendation (always pass blood sugar in mg/dL, pass units separately for display)
+        recommendation = ai_engine.get_recommendation(username, blood_sugar_mg_dl, meal, exercise, user_units)
 
         return (
             jsonify(
@@ -204,19 +199,16 @@ def get_recommendation(username):
         # Generate recommendation based on recent data
         latest_entry = recent_data[0]
         
-        # Convert blood sugar to user's preferred units for AI recommendation
+        # Get user's preferred units for display
         user_units = data_manager.get_user_preferred_units(username)
-        blood_sugar_for_ai = latest_entry['blood_sugar']
-        if user_units != "mg/dL":
-            blood_sugar_for_ai = UnitConverter.convert_to_user_units(
-                latest_entry['blood_sugar'], "mg/dL", user_units
-            )
-            
+        
+        # Always pass blood sugar in mg/dL (as stored in database), pass units separately for display
         recommendation = ai_engine.get_recommendation(
             username,
-            blood_sugar_for_ai,
+            latest_entry['blood_sugar'],  # Already in mg/dL from database
             latest_entry['meal'],
-            latest_entry['exercise']
+            latest_entry['exercise'],
+            user_units
         )
 
         return jsonify({'recommendation': recommendation}), 200
@@ -232,11 +224,25 @@ def get_meal_suggestions():
         data = request.get_json()
         blood_sugar = data.get('blood_sugar')
         preferences = data.get('preferences', '')
+        input_units = data.get('units', 'mg/dL')  # Get units from request
+        username = data.get('username')  # Get username to determine preferred units
 
         if not blood_sugar:
             return jsonify({'error': 'Blood sugar level is required'}), 400
 
-        suggestions = ai_engine.get_meal_suggestions(blood_sugar, preferences)
+        # Get user's preferred units if username is provided
+        if username:
+            user_units = data_manager.get_user_preferred_units(username)
+        else:
+            user_units = input_units
+
+        # Convert blood sugar to mg/dL for analysis (always work in mg/dL internally)
+        if input_units != "mg/dL":
+            blood_sugar_mg_dl = UnitConverter.convert_to_user_units(blood_sugar, input_units, "mg/dL")
+        else:
+            blood_sugar_mg_dl = blood_sugar
+
+        suggestions = ai_engine.get_meal_suggestions(blood_sugar_mg_dl, preferences, user_units)
         return jsonify({'suggestions': suggestions}), 200
 
     except Exception as e:
@@ -250,11 +256,25 @@ def get_exercise_recommendations():
         data = request.get_json()
         blood_sugar = data.get('blood_sugar')
         current_exercise = data.get('current_exercise', '')
+        input_units = data.get('units', 'mg/dL')  # Get units from request
+        username = data.get('username')  # Get username to determine preferred units
 
         if not blood_sugar:
             return jsonify({'error': 'Blood sugar level is required'}), 400
 
-        recommendations = ai_engine.get_exercise_recommendations(blood_sugar, current_exercise)
+        # Get user's preferred units if username is provided
+        if username:
+            user_units = data_manager.get_user_preferred_units(username)
+        else:
+            user_units = input_units
+
+        # Convert blood sugar to mg/dL for analysis (always work in mg/dL internally)
+        if input_units != "mg/dL":
+            blood_sugar_mg_dl = UnitConverter.convert_to_user_units(blood_sugar, input_units, "mg/dL")
+        else:
+            blood_sugar_mg_dl = blood_sugar
+
+        recommendations = ai_engine.get_exercise_recommendations(blood_sugar_mg_dl, current_exercise, user_units)
         return jsonify({'recommendations': recommendations}), 200
 
     except Exception as e:

@@ -20,17 +20,24 @@ class AIRecommendationEngine:
             self.client = None
 
     def get_recommendation(
-        self, username: str, blood_sugar: float, meal: str, exercise: str
+        self, username: str, blood_sugar: float, meal: str, exercise: str, units: str = "mg/dL"
     ) -> str:
-        """Generate personalized recommendation based on user data"""
+        """Generate personalized recommendation based on user data
+        Args:
+            username: User's username
+            blood_sugar: Blood sugar value in mg/dL (always)
+            meal: Meal description
+            exercise: Exercise description
+            units: User's preferred units for display (default: "mg/dL")
+        """
 
         # If no API key, return a basic recommendation
         if not self.api_key:
-            return GPT_ERROR_MESSAGE + self._get_basic_recommendation(blood_sugar)
+            return GPT_ERROR_MESSAGE + self._get_basic_recommendation(blood_sugar, units)
 
         try:
             # Create context for the AI
-            context = self._create_context(username, blood_sugar, meal, exercise)
+            context = self._create_context(username, blood_sugar, meal, exercise, units)
 
             # Call OpenAI API
             response = self.client.chat.completions.create(
@@ -54,21 +61,35 @@ class AIRecommendationEngine:
 
         except Exception as e:
             print(f"Error calling OpenAI API: {e}")
-            return GPT_ERROR_MESSAGE + self._get_basic_recommendation(blood_sugar)
+            return GPT_ERROR_MESSAGE + self._get_basic_recommendation(blood_sugar, units)
 
     def _create_context(
-        self, username: str, blood_sugar: float, meal: str, exercise: str
+        self, username: str, blood_sugar: float, meal: str, exercise: str, units: str = "mg/dL"
     ) -> str:
-        """Create context string for AI recommendation"""
+        """Create context string for AI recommendation
+        Args:
+            username: User's username
+            blood_sugar: Blood sugar value in mg/dL (always)
+            meal: Meal description
+            exercise: Exercise description
+            units: User's preferred units for display (default: "mg/dL")
+        """
+        from .unit_converter import UnitConverter
 
-        # Analyze blood sugar level
+        # Analyze blood sugar level (always in mg/dL)
         blood_sugar_status = self._analyze_blood_sugar(blood_sugar)
+        
+        # Convert to user's preferred units for display
+        if units != "mg/dL":
+            blood_sugar_display = UnitConverter.convert_to_user_units(blood_sugar, "mg/dL", units)
+        else:
+            blood_sugar_display = blood_sugar
 
         context = f"""
         User: {username}
 
         Today's Data:
-        - Blood Sugar Level: {blood_sugar} mg/dL ({blood_sugar_status})
+        - Blood Sugar Level: {blood_sugar_display} {units} ({blood_sugar_status})
         - Meal: {meal}
         - Exercise: {exercise}
 
@@ -108,38 +129,60 @@ class AIRecommendationEngine:
         return ' '.join(truncated_words) + '...'
 
     def _get_basic_recommendation(
-        self, blood_sugar: float
+        self, blood_sugar: float, units: str = "mg/dL"
     ) -> str:
-        """Provide basic recommendation when AI is not available"""
+        """Provide basic recommendation when AI is not available
+        Args:
+            blood_sugar: Blood sugar value in mg/dL (always)
+            units: User's preferred units for display (default: "mg/dL")
+        """
+        from .unit_converter import UnitConverter
 
-        # status = self._analyze_blood_sugar(blood_sugar)
+        # Convert to user's preferred units for display
+        if units != "mg/dL":
+            blood_sugar_display = UnitConverter.convert_to_user_units(blood_sugar, "mg/dL", units)
+        else:
+            blood_sugar_display = blood_sugar
 
+        # Analyze blood sugar level (always in mg/dL)
         if blood_sugar < 70:
-            return (f"Your blood sugar is low ({blood_sugar} mg/dL). "
+            return (f"Your blood sugar is low ({blood_sugar_display} {units}). "
                    f"Consider having a small snack with carbohydrates and protein. "
                    f"Monitor your levels closely and consult your healthcare provider "
                    f"if this happens frequently.")
 
         elif blood_sugar > 200:
-            return (f"Your blood sugar is elevated ({blood_sugar} mg/dL). "
+            return (f"Your blood sugar is elevated ({blood_sugar_display} {units}). "
                    f"Consider increasing your physical activity, monitoring your "
                    f"carbohydrate intake, and staying hydrated. If this persists, "
                    f"consult your healthcare provider.")
 
         else:
-            return (f"Your blood sugar level of {blood_sugar} mg/dL looks good! "
+            return (f"Your blood sugar level of {blood_sugar_display} {units} looks good! "
                    f"Keep up with your current routine. Remember to maintain regular "
                    f"meal times, stay active, and monitor your levels consistently.")
 
-    def get_meal_suggestions(self, blood_sugar: float, preferences: str = "") -> str:
-        """Get meal suggestions based on blood sugar level"""
+    def get_meal_suggestions(self, blood_sugar: float, preferences: str = "", units: str = "mg/dL") -> str:
+        """Get meal suggestions based on blood sugar level
+        Args:
+            blood_sugar: Blood sugar value in mg/dL (always)
+            preferences: User's meal preferences
+            units: User's preferred units for display (default: "mg/dL")
+        """
+        from .unit_converter import UnitConverter
+
+        # Convert to user's preferred units for display
+        if units != "mg/dL":
+            blood_sugar_display = UnitConverter.convert_to_user_units(blood_sugar, "mg/dL", units)
+        else:
+            blood_sugar_display = blood_sugar
 
         if not self.api_key:
-            return GPT_ERROR_MESSAGE + self._get_basic_meal_suggestions(blood_sugar)
+            return GPT_ERROR_MESSAGE + self._get_basic_meal_suggestions(blood_sugar, units)
 
         try:
             context = f"""
-            Blood sugar level: {blood_sugar} mg/dL
+            Blood sugar level: {blood_sugar_display} {units}
             User preferences: {preferences}
 
             Provide 3-4 meal suggestions that would be appropriate for this blood sugar level.
@@ -168,11 +211,15 @@ class AIRecommendationEngine:
 
         except Exception as e:
             print(f"Error getting meal suggestions: {e}")
-            return GPT_ERROR_MESSAGE + self._get_basic_meal_suggestions(blood_sugar)
+            return GPT_ERROR_MESSAGE + self._get_basic_meal_suggestions(blood_sugar, units)
 
-    def _get_basic_meal_suggestions(self, blood_sugar: float) -> str:
-        """Basic meal suggestions when AI is not available"""
-
+    def _get_basic_meal_suggestions(self, blood_sugar: float, units: str = "mg/dL") -> str:
+        """Basic meal suggestions when AI is not available
+        Args:
+            blood_sugar: Blood sugar value in mg/dL (always)
+            units: User's preferred units for display (default: "mg/dL")
+        """
+        # Analyze blood sugar level (always in mg/dL)
         if blood_sugar < 100:
             return self._limit_response_length("""
             Meal Suggestions for Normal Blood Sugar:
@@ -202,18 +249,30 @@ class AIRecommendationEngine:
             """, 200)
 
     def get_exercise_recommendations(
-        self, blood_sugar: float, current_exercise: str
+        self, blood_sugar: float, current_exercise: str, units: str = "mg/dL"
     ) -> str:
-        """Get exercise recommendations based on blood sugar level"""
+        """Get exercise recommendations based on blood sugar level
+        Args:
+            blood_sugar: Blood sugar value in mg/dL (always)
+            current_exercise: Current exercise description
+            units: User's preferred units for display (default: "mg/dL")
+        """
+        from .unit_converter import UnitConverter
+
+        # Convert to user's preferred units for display
+        if units != "mg/dL":
+            blood_sugar_display = UnitConverter.convert_to_user_units(blood_sugar, "mg/dL", units)
+        else:
+            blood_sugar_display = blood_sugar
 
         if not self.api_key:
             return GPT_ERROR_MESSAGE + self._get_basic_exercise_recommendations(
-                blood_sugar
+                blood_sugar, units
             )
 
         try:
             context = f"""
-            Blood sugar level: {blood_sugar} mg/dL
+            Blood sugar level: {blood_sugar_display} {units}
             Current exercise: {current_exercise}
 
             Provide exercise recommendations that are safe and beneficial for this blood sugar level.
@@ -242,14 +301,26 @@ class AIRecommendationEngine:
         except Exception as e:
             print(f"Error getting exercise recommendations: {e}")
             return self._get_basic_exercise_recommendations(
-                blood_sugar
+                blood_sugar, units
             )
 
     def _get_basic_exercise_recommendations(
-        self, blood_sugar: float
+        self, blood_sugar: float, units: str = "mg/dL"
     ) -> str:
-        """Basic exercise recommendations when AI is not available"""
+        """Basic exercise recommendations when AI is not available
+        Args:
+            blood_sugar: Blood sugar value in mg/dL (always)
+            units: User's preferred units for display (default: "mg/dL")
+        """
+        from .unit_converter import UnitConverter
 
+        # Convert to user's preferred units for display
+        if units != "mg/dL":
+            blood_sugar_display = UnitConverter.convert_to_user_units(blood_sugar, "mg/dL", units)
+        else:
+            blood_sugar_display = blood_sugar
+
+        # Analyze blood sugar level (always in mg/dL)
         if blood_sugar < 70:
             return self._limit_response_length(
                 "Your blood sugar is low. Avoid intense exercise until your levels stabilize. "
@@ -262,6 +333,6 @@ class AIRecommendationEngine:
 
         else:
             return self._limit_response_length(
-                f"Great time for exercise! Your blood sugar of {blood_sugar} mg/dL is in a safe range. "
+                f"Great time for exercise! Your blood sugar of {blood_sugar_display} {units} is in a safe range. "
                 f"Consider 30 minutes of moderate activity like walking, swimming, or cycling. "
                 f"Don't forget to monitor your levels during and after exercise.", 200)
