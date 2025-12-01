@@ -136,18 +136,33 @@ async function handleLogin(event) {
             body: JSON.stringify({ username, password })
         });
         
-        const data = await response.json();
+        // Check if response has content before trying to parse JSON
+        const contentType = response.headers.get('content-type');
+        let data = {};
+        
+        if (contentType && contentType.includes('application/json')) {
+            const text = await response.text();
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('Error parsing JSON response:', parseError);
+                    console.error('Response text:', text);
+                }
+            }
+        }
         
         if (response.ok) {
-            currentUser = { username };
+            currentUser = { username: data.username || username };
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            showNotification('Login successful!', 'success');
+            showNotification(data.message || 'Login successful!', 'success');
             showDashboard();
             loadUserData();
         } else {
-            showNotification(data.error || 'Login failed', 'error');
+            showNotification(data.error || `Login failed (${response.status})`, 'error');
         }
     } catch (error) {
+        console.error('Login error:', error);
         showNotification('Network error. Please try again.', 'error');
     } finally {
         hideLoading();
@@ -178,16 +193,50 @@ async function handleRegister(event) {
             body: JSON.stringify({ username, password })
         });
         
-        const data = await response.json();
+        console.log('Registration response status:', response.status);
+        console.log('Registration response ok:', response.ok);
         
-        if (response.ok) {
-            showNotification('Registration successful! Please login.', 'success');
-            showTab('login');
-            registerForm.reset();
+        // Check if response has content before trying to parse JSON
+        const contentType = response.headers.get('content-type');
+        let data = {};
+        
+        if (contentType && contentType.includes('application/json')) {
+            const text = await response.text();
+            console.log('Registration response text:', text);
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                    console.log('Registration response data:', data);
+                } catch (parseError) {
+                    console.error('Error parsing JSON response:', parseError);
+                    console.error('Response text:', text);
+                    // If parsing fails but status is ok, still treat as success
+                    if (response.ok || response.status === 201) {
+                        showNotification('Registration successful! Please login.', 'success');
+                        showTab('login');
+                        registerForm.reset();
+                        hideLoading();
+                        return;
+                    }
+                }
+            }
+        }
+        
+        if (response.ok || response.status === 201) {
+            showNotification(data.message || 'Registration successful! Please login.', 'success');
+            try {
+                showTab('login');
+                registerForm.reset();
+            } catch (tabError) {
+                console.error('Error showing login tab:', tabError);
+                // Don't show error to user if registration was successful
+            }
         } else {
-            showNotification(data.error || 'Registration failed', 'error');
+            showNotification(data.error || `Registration failed (${response.status})`, 'error');
         }
     } catch (error) {
+        console.error('Registration error:', error);
+        console.error('Error details:', error.message, error.stack);
         showNotification('Network error. Please try again.', 'error');
     } finally {
         hideLoading();

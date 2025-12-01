@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, Column, String, Float, DateTime, Text
+from sqlalchemy import create_engine, Column, String, Float, DateTime, Text, func, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
@@ -64,10 +64,28 @@ class DataManager:
     def _initialize_database(self):
         """Initialize database connection and create tables"""
         try:
-            self.engine = create_engine(self.database_url, echo=False)
+            # Add connection timeout and pool settings to prevent hanging
+            self.engine = create_engine(
+                self.database_url, 
+                echo=False,
+                pool_pre_ping=True,  # Verify connections before using
+                connect_args={
+                    "connect_timeout": 5,  # 5 second connection timeout
+                    "application_name": "diabetes_tracker"
+                },
+                pool_timeout=5,  # 5 second pool timeout
+                pool_recycle=3600  # Recycle connections after 1 hour
+            )
             self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
             
+            # Test connection first with a quick query
+            logger.info("Testing database connection...")
+            with self.engine.connect() as conn:
+                result = conn.execute(text("SELECT 1"))
+                result.fetchone()  # Actually execute the query
+            
             # Create tables
+            logger.info("Creating database tables...")
             Base.metadata.create_all(bind=self.engine)
             self.db_available = True
             logger.info("Database initialized successfully")
@@ -89,21 +107,36 @@ class DataManager:
             return MockSession()
         return self.SessionLocal()
 
+    def _normalize_username(self, username: str) -> str:
+        """Normalize username to lowercase for case-insensitive comparison"""
+        return username.lower().strip() if username else ""
+
     def get_user_preferred_units(self, username: str) -> str:
         """Get user's preferred units"""
+        if not username:
+            return 'mg/dL'
+            
+        # Normalize username for case-insensitive lookup
+        normalized_username = self._normalize_username(username)
+        
         # Check fallback storage first (most reliable)
-        if username in self._fallback_user_units:
-            return self._fallback_user_units[username]
+        if normalized_username in self._fallback_user_units:
+            return self._fallback_user_units[normalized_username]
         
         # Try to get from database if available
         if self.db_available:
             try:
                 with self.get_db_session() as session:
-                    user = session.query(User).filter(User.username == username).first()
-                    if user and user.preferred_units:
-                        # Cache in fallback storage for future use
-                        self._fallback_user_units[username] = user.preferred_units
-                        return user.preferred_units
+                    # Use case-insensitive comparison in Python
+                    all_users = session.query(User).all()
+                    for user in all_users:
+                        user_normalized = self._normalize_username(user.username)
+                        if user_normalized == normalized_username:
+                            if user.preferred_units:
+                                # Cache in fallback storage for future use
+                                self._fallback_user_units[normalized_username] = user.preferred_units
+                                return user.preferred_units
+                            break
             except Exception as e:
                 logger.warning(f"Could not get units from database for {username}: {e}")
         
@@ -112,24 +145,38 @@ class DataManager:
 
     def update_user_preferred_units(self, username: str, units: str) -> bool:
         """Update user's preferred units"""
+        if not username:
+            return False
+            
+        # Normalize username for case-insensitive lookup
+        normalized_username = self._normalize_username(username)
+        
         # Always use fallback storage for unit preferences
         # This ensures unit switching works regardless of database status
-        self._fallback_user_units[username] = units
-        logger.info(f"Updated preferred units for {username} in fallback storage: {units}")
+        self._fallback_user_units[normalized_username] = units
+        logger.info(f"Updated preferred units for {normalized_username} in fallback storage: {units}")
         
         # Try to sync with database if available, but don't fail if it's not
         if self.db_available:
             try:
                 with self.get_db_session() as session:
-                    user = session.query(User).filter(User.username == username).first()
+                    # Use case-insensitive comparison in Python
+                    all_users = session.query(User).all()
+                    user = None
+                    for u in all_users:
+                        user_normalized = self._normalize_username(u.username)
+                        if user_normalized == normalized_username:
+                            user = u
+                            break
+                    
                     if user:
                         user.preferred_units = units
                         session.commit()
-                        logger.info(f"Synced preferred units for {username} to database: {units}")
+                        logger.info(f"Synced preferred units for {normalized_username} to database: {units}")
                     else:
-                        logger.info(f"User {username} not found in database, using fallback storage only")
+                        logger.info(f"User {normalized_username} not found in database, using fallback storage only")
             except Exception as e:
-                logger.warning(f"Could not sync units to database for {username}: {e}")
+                logger.warning(f"Could not sync units to database for {normalized_username}: {e}")
                 # Don't fail - we have fallback storage
         
         return True
