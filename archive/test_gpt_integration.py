@@ -45,11 +45,7 @@ def test_gpt_integration():
     # Test basic recommendation when API key is not set
     try:
         print("\nTesting basic recommendation...")
-        recommendation = ai_engine._get_basic_recommendation(
-            blood_sugar=120.0,
-            meal="Grilled chicken salad",
-            exercise="30 minutes walking"
-        )
+        recommendation = ai_engine._get_basic_recommendation(blood_sugar=120.0)
         print("Basic recommendation generated successfully with no API key")
         print(f"Recommendation: {recommendation[:100]}...")
     except Exception as e:

@@ -1,6 +1,8 @@
 import os
+import logging
 from openai import OpenAI
 
+logger = logging.getLogger(__name__)
 
 GPT_ERROR_MESSAGE = "GPT API is not available. Here is a basic recommendation:\n"
 
@@ -8,27 +10,60 @@ class AIRecommendationEngine:
     """Handles AI-powered recommendations using OpenAI GPT"""
 
     def __init__(self):
+        # Try to load .env file if not already loaded
+        from dotenv import load_dotenv
+        from pathlib import Path
+        
+        # Try to find .env file in project root
+        # File structure: project_root/src/diabetes_tracker/modules/ai_recommendations.py
+        # So we need to go up 4 levels: modules -> diabetes_tracker -> src -> project_root
+        current_file = Path(__file__).resolve()
+        project_root = current_file.parent.parent.parent.parent
+        env_file = project_root / '.env'
+        
+        # Also try current working directory as fallback
+        cwd_env = Path.cwd() / '.env'
+        
+        # Load .env file (try project root first, then CWD)
+        if env_file.exists():
+            load_dotenv(env_file, override=False)
+            logger.info(f"Loaded .env from project root: {env_file}")
+        elif cwd_env.exists():
+            load_dotenv(cwd_env, override=False)
+            logger.info(f"Loaded .env from current directory: {cwd_env}")
+        else:
+            load_dotenv(override=False)  # Try default locations
+            logger.warning(f"Could not find .env file. Tried: {env_file} and {cwd_env}")
+        
         self.api_key = os.getenv("OPENAI_API_KEY")
+        self.client = None
+        
         if self.api_key:
             try:
+                # Initialize OpenAI client with explicit api_key parameter
                 self.client = OpenAI(api_key=self.api_key)
+                logger.info("OpenAI client initialized successfully")
             except Exception as e:
-                print(f"Warning: Failed to initialize OpenAI client: {e}")
+                logger.warning(f"Failed to initialize OpenAI client: {e}")
+                logger.warning("GPT features will use fallback recommendations")
                 self.client = None
         else:
-            print("Warning: OPENAI_API_KEY not found in environment variables")
-            self.client = None
+            logger.warning("OPENAI_API_KEY not found in environment variables")
+            logger.warning(f"Checked for .env file at: {env_file} and {cwd_env}")
+            logger.warning("GPT features will use fallback recommendations")
 
     def get_recommendation(
         self, username: str, blood_sugar: float, meal: str, exercise: str
     ) -> str:
         """Generate personalized recommendation based on user data"""
 
-        # If no API key, return a basic recommendation
-        if not self.api_key:
+        # If no client (no API key or initialization failed), return a basic recommendation
+        if not self.client:
+            logger.warning("GPT client not available, using fallback recommendation")
             return GPT_ERROR_MESSAGE + self._get_basic_recommendation(blood_sugar)
 
         try:
+            logger.info(f"Calling GPT API for user {username} with blood_sugar={blood_sugar}")
             # Create context for the AI
             context = self._create_context(username, blood_sugar, meal, exercise)
 
@@ -50,10 +85,12 @@ class AIRecommendationEngine:
                 temperature=0.7,
             )
 
-            return response.choices[0].message.content.strip()
+            recommendation = response.choices[0].message.content.strip()
+            logger.info(f"GPT API call successful, received {len(recommendation)} characters")
+            return recommendation
 
         except Exception as e:
-            print(f"Error calling OpenAI API: {e}")
+            logger.error(f"Error calling OpenAI API: {e}", exc_info=True)
             return GPT_ERROR_MESSAGE + self._get_basic_recommendation(blood_sugar)
 
     def _create_context(
@@ -134,7 +171,7 @@ class AIRecommendationEngine:
     def get_meal_suggestions(self, blood_sugar: float, preferences: str = "") -> str:
         """Get meal suggestions based on blood sugar level"""
 
-        if not self.api_key:
+        if not self.client:
             return GPT_ERROR_MESSAGE + self._get_basic_meal_suggestions(blood_sugar)
 
         try:
@@ -167,7 +204,7 @@ class AIRecommendationEngine:
             return response.choices[0].message.content.strip()
 
         except Exception as e:
-            print(f"Error getting meal suggestions: {e}")
+            logger.error(f"Error getting meal suggestions: {e}", exc_info=True)
             return GPT_ERROR_MESSAGE + self._get_basic_meal_suggestions(blood_sugar)
 
     def _get_basic_meal_suggestions(self, blood_sugar: float) -> str:
@@ -206,7 +243,7 @@ class AIRecommendationEngine:
     ) -> str:
         """Get exercise recommendations based on blood sugar level"""
 
-        if not self.api_key:
+        if not self.client:
             return GPT_ERROR_MESSAGE + self._get_basic_exercise_recommendations(
                 blood_sugar
             )
@@ -240,8 +277,8 @@ class AIRecommendationEngine:
             return response.choices[0].message.content.strip()
 
         except Exception as e:
-            print(f"Error getting exercise recommendations: {e}")
-            return self._get_basic_exercise_recommendations(
+            logger.error(f"Error getting exercise recommendations: {e}", exc_info=True)
+            return GPT_ERROR_MESSAGE + self._get_basic_exercise_recommendations(
                 blood_sugar
             )
 

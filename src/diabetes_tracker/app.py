@@ -2,6 +2,13 @@ from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 # Import our modules
 from .modules.database import DataManager
@@ -10,7 +17,14 @@ from .modules.auth import AuthManager
 from .modules.unit_converter import UnitConverter
 
 # Load environment variables
-load_dotenv()
+# Try to load from project root first, then fall back to default behavior
+from pathlib import Path
+project_root = Path(__file__).parent.parent.parent.parent
+env_file = project_root / '.env'
+if env_file.exists():
+    load_dotenv(env_file)
+else:
+    load_dotenv()  # Fall back to default behavior
 
 # Get the directory where this file is located
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,16 +34,43 @@ app = Flask(__name__,
             static_folder=os.path.join(current_dir, 'static'))
 CORS(app)
 
-# Initialize modules
-data_manager = DataManager()
-ai_engine = AIRecommendationEngine()
-auth_manager = AuthManager(data_manager)
+# Initialize modules with error handling
+# This ensures the app can start even if some modules fail to initialize
+try:
+    data_manager = DataManager()
+except Exception as e:
+    logging.error(f"Failed to initialize DataManager: {e}")
+    data_manager = None
+
+try:
+    ai_engine = AIRecommendationEngine()
+except Exception as e:
+    logging.error(f"Failed to initialize AIRecommendationEngine: {e}")
+    ai_engine = None
+
+try:
+    auth_manager = AuthManager(data_manager) if data_manager else None
+except Exception as e:
+    logging.error(f"Failed to initialize AuthManager: {e}")
+    auth_manager = None
+
+# Log successful app initialization
+logging.info("Flask app initialized successfully")
+logging.info(f"DataManager available: {data_manager is not None}")
+logging.info(f"AIEngine available: {ai_engine is not None}")
+logging.info(f"AuthManager available: {auth_manager is not None}")
 
 
 @app.route("/")
 def index():
     """Serve the main application page"""
     return render_template("index.html")
+
+
+@app.route("/health")
+def health():
+    """Health check endpoint for App Runner"""
+    return jsonify({"status": "healthy", "service": "diabetes-tracker"}), 200
 
 
 @app.route("/api/register", methods=["POST"])
@@ -111,8 +152,10 @@ def log_entry():
             blood_sugar_for_ai = UnitConverter.convert_to_user_units(blood_sugar_mg_dl, "mg/dL", user_units)
         else:
             blood_sugar_for_ai = blood_sugar_mg_dl
-            
+        
+        logging.info(f"Getting AI recommendation for {username}, blood_sugar={blood_sugar_for_ai}")
         recommendation = ai_engine.get_recommendation(username, blood_sugar_for_ai, meal, exercise)
+        logging.info(f"Recommendation received: {len(recommendation)} chars, starts with: {recommendation[:50]}...")
 
         return (
             jsonify(
@@ -354,4 +397,6 @@ def get_user_stats(username):
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5001)
+    # Read PORT from environment variable, default to 8000
+    port = int(os.getenv("PORT", 8000))
+    app.run(debug=True, host="0.0.0.0", port=port)

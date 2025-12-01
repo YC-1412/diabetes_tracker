@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  diabetes-tracker:
+    build: .
+    container_name: diabetes-tracker
+    ports:
+      - "${PORT:-8000}:${PORT:-8000}"
+    environment:
+      # Port configuration
+      - PORT=${PORT:-8000}
+      
+      # Database configuration
+      # On Mac/Windows Docker, use 'host.docker.internal' to connect to host machine
+      # On Linux, use your host's IP address or '172.17.0.1'
+      # For remote database, use the server's IP or domain
+      - DB_HOST=${DB_HOST:-host.docker.internal}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-diabetes_tracker}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+      
+      # OpenAI API Key (optional)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    restart: unless-stopped
+
+# Optional: Uncomment below if you want to run PostgreSQL in Docker too
+# services:
+#   postgres:
+#     image: postgres:15
+#     container_name: diabetes-postgres
+#     environment:
+#       POSTGRES_DB: diabetes_tracker
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     networks:
+#       - diabetes-network
+# 
+# volumes:
+#   postgres_data:
+# 
+# networks:
+#   diabetes-network:
+
